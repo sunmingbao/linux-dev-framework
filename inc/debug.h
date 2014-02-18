@@ -20,19 +20,26 @@
 #define    DBG_PRINT(fmt, args...) \
     do \
     { \
-        printf("DBG:%s(%d)-%s:\n"fmt"\n", __FILE__,__LINE__,__FUNCTION__,##args);\
+        printf("DBG:%s(%d)-%s:\n"fmt"\n", __FILE__,__LINE__,__FUNCTION__,##args); \
     } while (0)
 
-#define    DBG_PRINT_ERR(fmt, args...) \
+#define    DBG_PRINT_QUIT(fmt, args...) \
     do \
     { \
-        printf("DBG:%s(%d)-%s:\n"fmt"\n:%s\n", __FILE__,__LINE__,__FUNCTION__,##args, strerror(errno));\
+        printf("DBG:%s(%d)-%s:\n"fmt"\n", __FILE__,__LINE__,__FUNCTION__,##args); \
+        exit(1); \
     } while (0)
 
-#define    DBG_PRINT_ERR_QUIT(fmt, args...) \
+#define    ERR_DBG_PRINT(fmt, args...) \
     do \
     { \
-        printf("DBG:%s(%d)-%s:\n"fmt"\n:%s\n", __FILE__,__LINE__,__FUNCTION__,##args, strerror(errno));\
+        printf("ERR_DBG:%s(%d)-%s:\n"fmt": %s\n", __FILE__,__LINE__,__FUNCTION__,##args, strerror(errno)); \
+    } while (0)
+
+#define    ERR_DBG_PRINT_QUIT(fmt, args...) \
+    do \
+    { \
+        printf("ERR_DBG_QUIT:%s(%d)-%s:\n"fmt": %s\n", __FILE__,__LINE__,__FUNCTION__,##args, strerror(errno)); \
         exit(1); \
     } while (0)
 

@@ -9,17 +9,11 @@
  */
 
 #include <stdio.h>
-#include "debug.h"
-
+#include "socket.h"
 
 int main(int argc, char *argv[])
 {
-    char haha[121] = "I will always love fangfang";
-    print_mem(haha, sizeof(haha));
-
-    ERR_DBG_PRINT_QUIT("%d %d", 1, 2);
-
-    printf("haha");
+    udp_socket_init("192.168.1.204", 1024);
     return 0;
 }
 

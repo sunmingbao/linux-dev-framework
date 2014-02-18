@@ -8,18 +8,16 @@
  * ” œ‰: sunmingbao@126.com
  */
 
+#ifndef  __SOCKET_H__
+#define  __SOCKET_H__
+
+#include <stdint.h>
 #include <stdio.h>
-#include "debug.h"
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 
+int udp_socket_init(const char *ipstr, uint16_t port);
 
-int main(int argc, char *argv[])
-{
-    char haha[121] = "I will always love fangfang";
-    print_mem(haha, sizeof(haha));
-
-    ERR_DBG_PRINT_QUIT("%d %d", 1, 2);
-
-    printf("haha");
-    return 0;
-}
+#endif
 

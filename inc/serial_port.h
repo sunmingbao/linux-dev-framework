@@ -8,18 +8,12 @@
  * ” œ‰: sunmingbao@126.com
  */
 
-#include <stdio.h>
-#include "debug.h"
+#ifndef  __SERIAL_PORT_H__
+#define  __SERIAL_PORT_H__
 
+int serial_init(const char *serial_dev_name, int *p_fd, int RTSCTS, int need_line_input);
+int serial_write(int fd_serial, void *src, int len);
+int serial_read(int fd_serial, char *buf, int len);
 
-int main(int argc, char *argv[])
-{
-    char haha[121] = "I will always love fangfang";
-    print_mem(haha, sizeof(haha));
-
-    ERR_DBG_PRINT_QUIT("%d %d", 1, 2);
-
-    printf("haha");
-    return 0;
-}
+#endif
 
