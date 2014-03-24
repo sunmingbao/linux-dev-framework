@@ -12,21 +12,17 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <errno.h>
-#include <syslog.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 #include "debug.h"
 #include "log.h"
+#include "socket.h"
 
 char * get_ipstr(struct sockaddr_in *sock_addr, char *ip)
 {
-    char *tmp_ipstr=inet_ntoa(sock_addr->sin_addr);
+    char *tmp_ipstr=(char *)inet_ntoa(sock_addr->sin_addr);
     if (ip != NULL)
         strcpy(ip, tmp_ipstr);
 
@@ -41,6 +37,13 @@ uint16_t get_port(struct sockaddr_in *sock_addr, uint16_t *port)
     *port=tmp_port;
 
     return tmp_port;
+}
+
+int sockaddr_equal(struct sockaddr_in *sock_addr1, struct sockaddr_in *sock_addr2)
+{
+    return (sock_addr1->sin_family == sock_addr2->sin_family) &&
+        (sock_addr1->sin_port == sock_addr2->sin_port) &&
+        (sock_addr1->sin_addr.s_addr == sock_addr2->sin_addr.s_addr);
 }
 
 
@@ -72,7 +75,7 @@ int udp_socket_init_2(struct sockaddr_in *sock_addr)
         return -1;
     }
 
-    //DBG_PRINT("bind udp socket to %s:%d succeed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
+    SysLog("bind udp socket to %s:%d succeed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
     return sockfd;
 
 }
@@ -101,6 +104,23 @@ int udp_socket_recvfrom(int sockfd, void *buf, int buf_size, struct sockaddr_in 
         if (EINTR==errno) return 0;
         
         ErrSysLog("udp socket rcv failed");
+        return -1;
+    }
+
+    return ret;
+}
+
+int udp_socket_sendto(int sockfd, void *buf, int buf_size, struct sockaddr_in *peer_addr)
+{
+    socklen_t addr_len = sizeof(struct sockaddr_in);
+    int ret=sendto(sockfd, buf, buf_size
+                     , 0
+                     , (struct sockaddr *)peer_addr, addr_len);
+    if (ret<0)
+    {
+        if (EINTR==errno) return 0;
+        
+        ErrSysLog("udp socket snd failed");
         return -1;
     }
 

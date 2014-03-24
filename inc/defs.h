@@ -16,6 +16,7 @@
 #define    SUCCESS   (0)
 
 #define    MAX_FILE_PATH_LEN    (1024)
+#define    MAX_PATH_LEN         (MAX_FILE_PATH_LEN)
 
 typedef __signed__ char __s8;
 typedef unsigned char __u8;

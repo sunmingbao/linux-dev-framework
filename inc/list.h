@@ -76,7 +76,7 @@ static inline int list_empty(const struct list_head *head)
 	container_of(ptr, type, member)
 
 #define list_for_each(pos, head) \
-	for (pos = (head)->next; prefetch(pos->next), pos != (head); \
+	for (pos = (head)->next; pos != (head); \
         	pos = pos->next)
 
 
