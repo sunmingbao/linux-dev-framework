@@ -33,8 +33,8 @@ export project_target_path:=$(project_root_path)/target
 
 export LIB_DEP_PATH:=$(project_target_path)/lib/dep
 export LIB_OBJ_PATH:=$(project_target_path)/lib/obj
-export LIB_FILE_STATIC:=$(project_target_path)/lib/c_free_project.a
-export LIB_FILE_DYNAMIC:=$(project_target_path)/lib/c_free_project.so
+export LIB_FILE_STATIC:=$(project_target_path)/lib/app_lib.a
+export LIB_FILE_DYNAMIC:=$(project_target_path)/lib/app_lib.so
 
 export APP_CODE_DEP_PATH:=$(project_target_path)/app_code/dep
 export APP_CODE_OBJ_PATH:=$(project_target_path)/app_code/obj

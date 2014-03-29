@@ -14,7 +14,7 @@
 
 int main(int argc, char *argv[])
 {
-    char haha[121] = "I will always love fangfang";
+    char haha[121] = "some text to print. abc 123";
     print_mem(haha, sizeof(haha));
 
     ERR_DBG_PRINT_QUIT("%d %d", 1, 2);

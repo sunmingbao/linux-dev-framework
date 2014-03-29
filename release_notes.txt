@@ -1,7 +1,7 @@
 
-	linux-dev-framework v0.7.0
+	linux-dev-framework v1.0.0
 
 发布日期：2014-03-29
 
-整理了代码结构
-增加了一些新例程
+整改了部分内容。
+完善了软件说明。
