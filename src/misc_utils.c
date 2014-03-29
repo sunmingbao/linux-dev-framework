@@ -225,38 +225,6 @@ int register_sighandler(int signum, void (*handler)(int))
 }
 
 
-char * str_trim_len(char * input, int len)
-{
-    char *head=input;
-    char *tail=input + (len - 1);
-    
-    if (len <=0) return NULL;
-
-    while (len >0 && !(isgraph(*head)))
-    {
-        head++;
-        len--;
-
-    }
-    if (len <=0) return NULL;
-    
-    while (len >0 && !(isgraph(*tail)))
-    {
-        *tail='\0';
-        tail--;
-        len--;
-
-    }
-    if (len <=0) return NULL;
-
-    return head;
-
-}
-
-char * str_trim(char * input)
-{
-    return str_trim_len(input, strlen(input));
-}
 
 void print_time()
 {
