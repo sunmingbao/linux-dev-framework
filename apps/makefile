@@ -26,7 +26,7 @@ all:$(EXE_FILES)
 
 $(project_target_path)/%.exe: $(OBJ_PATH)/%.o  $(LIB_FILE_STATIC)
 	@echo -n Building $@ ...
-	@$(CC)  $^ -o $@ 
+	@$(CC)  $(LDFLAGS) -o $@  $^  $(C_LIBS)
 	@echo done!
 
 $(OBJ_PATH)/%.o: $(SRC_PATH)/%.c $(DEP_PATH)/%.d

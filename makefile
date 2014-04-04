@@ -33,12 +33,16 @@ export project_target_path:=$(project_root_path)/target
 
 export LIB_DEP_PATH:=$(project_target_path)/lib/dep
 export LIB_OBJ_PATH:=$(project_target_path)/lib/obj
-export LIB_FILE_STATIC:=$(project_target_path)/lib/app_lib.a
-export LIB_FILE_DYNAMIC:=$(project_target_path)/lib/app_lib.so
+export APP_LIB_NAME:=app_lib
+export LIB_FILE_STATIC:=$(project_target_path)/lib/$(APP_LIB_NAME).a
+export LIB_FILE_DYNAMIC:=$(project_target_path)/lib/$(APP_LIB_NAME).so
 
 export APP_CODE_DEP_PATH:=$(project_target_path)/app_code/dep
 export APP_CODE_OBJ_PATH:=$(project_target_path)/app_code/obj
 
+export LDFLAGS:=-L$(project_target_path)/lib/
+#export LDFLAGS := $(LDFLAGS) -static
+export C_LIBS:=-ldl -lpthread 
 
 .PHONY:default prepare clean
 
