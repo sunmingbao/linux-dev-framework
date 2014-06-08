@@ -16,5 +16,7 @@
 void nano_sleep(long sec, long nsec);
 int genPIDfile(char *szPidFile);
 int register_sighandler(int signum, void (*handler)(int));
+int get_cmd_result_int(const char *cmd, int *result_code);
+int get_cmd_result(char *buf, int buflen, const char *cmd);
 #endif
 
