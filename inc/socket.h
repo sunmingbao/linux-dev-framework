@@ -28,6 +28,7 @@ void make_sockaddr(struct sockaddr_in *sock_addr, uint32_t ip, uint16_t port);
 int sockaddr_equal(struct sockaddr_in *sock_addr1, struct sockaddr_in *sock_addr2);
 char * get_ipstr(struct sockaddr_in *sock_addr, char *ip);
 uint16_t get_port(struct sockaddr_in *sock_addr, uint16_t *port);
-
+void set_socket_timeout(int sockfd, int snd, int rcv);
+void set_useful_sock_opt(int sockfd);
 #endif
 

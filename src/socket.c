@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/time.h>
 
 #include "debug.h"
 #include "log.h"
@@ -127,4 +128,36 @@ int udp_socket_sendto(int sockfd, void *buf, int buf_size, struct sockaddr_in *p
     return ret;
 }
 
+void set_socket_timeout(int sockfd, int snd, int rcv)
+{
+    struct timeval timeout; 
 
+    if (snd != -1)
+    {
+        timeout.tv_sec = snd;
+        timeout.tv_usec = 0;
+
+        setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,  sizeof(timeout));
+    }
+
+    if (rcv != -1)
+    {
+        timeout.tv_sec = rcv;
+        timeout.tv_usec = 0;
+
+        setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,  sizeof(timeout));
+    }
+
+}
+
+
+void set_useful_sock_opt(int sockfd)
+{
+    int nRecvBuf=256*1024;
+    int nSendBuf=256*1024;
+    int reuse_addr = 1;
+    socklen_t optlen = sizeof(int);
+    setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&nRecvBuf,optlen); 
+    setsockopt(sockfd,SOL_SOCKET,SO_SNDBUF,&nSendBuf,optlen);
+    setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&reuse_addr,optlen);
+}

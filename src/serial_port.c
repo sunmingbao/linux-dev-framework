@@ -164,7 +164,7 @@ int serial_set_line_input(int fd)
     return 0;  
 }
 
-int serial_init(const char *serial_dev_name, int *p_fd, int RTSCTS, int need_line_input)
+int serial_init(const char *serial_dev_name, int *p_fd, int RTSCTS, int speed, int need_line_input)
 {
     int fd;
     printf("init %s\n", serial_dev_name);
@@ -175,7 +175,7 @@ int serial_init(const char *serial_dev_name, int *p_fd, int RTSCTS, int need_lin
         return 1;
     }
 #if 1
-    set_speed(fd, 115200);
+    set_speed(fd, speed);
     set_Parity(fd, 8, 'n', 1, RTSCTS);
     if (need_line_input) serial_set_line_input(fd);
 #endif

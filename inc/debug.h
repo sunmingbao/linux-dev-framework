@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -44,6 +45,11 @@
     } while (0)
 
 void print_mem(void *start_addr, uint32_t length);
+
+static inline void get_tmp_file_name(char *buf, int len)
+{
+    snprintf(buf, len, "/tmp/tmp_file.%d", getpid());
+}
 
 #endif
 
