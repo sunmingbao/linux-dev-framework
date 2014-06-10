@@ -1,8 +1,8 @@
 
-	linux-dev-framework v1.0.3
+	linux-dev-framework v1.0.4
 
-发布日期：2014-06-08
+发布日期：2014-06-10
 
 更新内容：
 
-完善了部分代码及注释说明。
+修正了makefile的一处bug。

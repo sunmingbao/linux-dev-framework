@@ -36,10 +36,10 @@ $(OBJ_PATH)/%.o: $(SRC_PATH)/%.c $(DEP_PATH)/%.d
 
 $(DEP_PATH)/%.d: $(SRC_PATH)/%.c
 #	$(CC) -MM  $(CFLAGS) $(INC_DIRS) $< | \
-#        sed "s/$*.o[ :]*/$(subst /,\/, $(OBJ_PATH))\/$*.o  $(subst /,\/, $(DEP_PATH))\/$*.d : /g"> $@
+#        sed "s/$*\.o[ :]*/$(subst /,\/, $(OBJ_PATH))\/$*.o  $(subst /,\/, $(DEP_PATH))\/$*.d : /g"> $@
 	@echo -n Building $@ ...
 	@$(CC) -MM  $(CFLAGS) $(INC_DIRS) $< | \
-        sed "s/$*.o[ :]*/$(subst /,\/, $(DEP_PATH))\/$*.d : /g"> $@
+        sed "s/$*\.o[ :]*/$(subst /,\/, $(DEP_PATH))\/$*.d : /g"> $@
 	@echo done!
 
 -include $(DEP_FILES)
