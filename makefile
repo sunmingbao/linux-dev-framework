@@ -17,7 +17,7 @@ export is_linux:=no
 endif
 
 export CC:=$(CROSS_COMPILE)gcc
-export CFLAGS:=-c -O2
+export CFLAGS:=-c -O2 -fno-omit-frame-pointer
 export LD:=$(CROSS_COMPILE)ld
 export AR:=$(CROSS_COMPILE)ar
 
@@ -40,7 +40,7 @@ export LIB_FILE_DYNAMIC:=$(project_target_path)/lib/$(APP_LIB_NAME).so
 export APP_CODE_DEP_PATH:=$(project_target_path)/app_code/dep
 export APP_CODE_OBJ_PATH:=$(project_target_path)/app_code/obj
 
-export LDFLAGS:=-L$(project_target_path)/lib/
+export LDFLAGS:=-rdynamic -L$(project_target_path)/lib/
 #export LDFLAGS := $(LDFLAGS) -static
 export C_LIBS:=-ldl -lpthread 
 

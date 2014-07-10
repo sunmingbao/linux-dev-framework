@@ -1,8 +1,8 @@
 
-	linux-dev-framework v1.0.4
+	linux-dev-framework v1.0.5
 
-发布日期：2014-06-10
+发布日期：2014-07-10
 
 更新内容：
 
-修正了makefile的一处bug。
+增加了对SIGSEGV异常的调用链打印功能。
