@@ -8,16 +8,14 @@
  * ” œ‰: sunmingbao@126.com
  */
 
-#ifndef  __UTILS_H__
-#define  __UTILS_H__
+#ifndef  __CONFIG_FILE_OPS_H__
+#define  __CONFIG_FILE_OPS_H__
 
 #include   "defs.h"
 
-#define    MAX_FILE_NAME_LEN    (128)
-#define    MAX_ARGS_LEN         (128)
-#define    MAX_VAR_NAME_LEN     (128)
 
 #define    MAX_VAR_NUM          (50)
+#define    MAX_VAR_NAME_LEN     (128)
 #define    MAX_VAR_VALUE_LEN    (MAX_PATH_LEN)
 
 int parse_config_file(char *path_to_config_file, int need_update);

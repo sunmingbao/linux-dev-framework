@@ -20,7 +20,7 @@
 int get_log_file_fd();
 
 #define    DFT_LOG_FILE_SIZE    (4096)
-int init_log(char *file_name, int file_size);
+int init_log(char *file_name, int file_size /* bytes */);
 int write_log(const char *fmt, ...);
 
 #define SysLog(fmt, args...) \

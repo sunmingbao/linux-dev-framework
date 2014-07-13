@@ -26,7 +26,7 @@ typedef struct
     unsigned char dst[6];
     unsigned char src[6];
     unsigned short type;
-} __attribute__ ((aligned (1))) t_ether_packet;
+} __attribute__((packed)) t_ether_packet;
 
 #define ETH_P_VLAN	0x8100		/* Ethernet Loopback packet	*/
 #define ETH_P_LOOP	0x0060		/* Ethernet Loopback packet	*/
@@ -45,7 +45,7 @@ typedef struct
     unsigned char src[6];
     char     tag_802_1Q[4];
     unsigned short type;
-} __attribute__ ((aligned (1))) t_ether_vlan_packet;
+} __attribute__((packed)) t_ether_vlan_packet;
 
 static inline __u16 get_eth_type_from_addr(void *addr)
 {
@@ -108,7 +108,7 @@ typedef struct
 	__u32	saddr;
 	__u32	daddr;
 	/*The options start here. */
-} __attribute__ ((aligned (1))) t_ip_hdr ;
+} __attribute__((packed)) t_ip_hdr ;
 
 #define FIXED_IP_HDR_LEN    20
 #define MIN_PKT_LEN         (FIXED_IP_HDR_LEN+14)
@@ -157,7 +157,7 @@ typedef struct
 		__u16	mtu;
 	} frag;
   } un;
-} __attribute__ ((aligned (1))) t_icmp_hdr;
+} __attribute__((packed)) t_icmp_hdr;
 #define  FIXED_ICMP_HDR_LEN    (4)
 #define  FIXED_ICMP_ECHO_HDR_LEN    (8)
 static inline int icmp_hdr_len(void *p_icmp_hdr)
@@ -202,7 +202,7 @@ typedef struct
 	__u8	bz;
 	__u8	protocol;
 	__u16	len;
-} __attribute__ ((aligned (1))) t_tcp_udp_pseudo_hdr;
+} __attribute__((packed)) t_tcp_udp_pseudo_hdr;
 
 
 typedef struct 
@@ -226,7 +226,7 @@ typedef struct
 	__u16	window;
 	__u16	check;
 	__u16	urg_ptr;
-} __attribute__ ((aligned (1))) t_tcp_hdr ;
+} __attribute__((packed)) t_tcp_hdr ;
 static inline int tcp_hdr_len(void *pt_tcp_hdr)
 {
     return ((t_tcp_hdr *)pt_tcp_hdr)->doff*4;
@@ -238,7 +238,7 @@ typedef struct
 	__u16	dest;
 	__u16	len;
 	__u16	check;
-} __attribute__ ((aligned (1))) t_udp_hdr;
+} __attribute__((packed)) t_udp_hdr;
 
 static inline int udp_data_len(t_ip_hdr *iph)
 {
@@ -274,7 +274,7 @@ typedef struct
 	unsigned char		ar_tip[4];		/* target IP address		*/
 #endif
 
-} __attribute__ ((aligned (1)))  t_arp_hdr;
+} __attribute__((packed))  t_arp_hdr;
 
 static inline int arp_pkt_len(t_arp_hdr *pt_arp_hdr)
 {
@@ -295,7 +295,7 @@ typedef struct
 
 	__u8	saddr[IPV6_ADDR_LEN];
 	__u8    daddr[IPV6_ADDR_LEN];
-} __attribute__ ((aligned (1)))  t_ipv6_hdr;
+} __attribute__((packed))  t_ipv6_hdr;
 
 typedef struct 
 {
@@ -304,7 +304,7 @@ typedef struct
 
 	__u16	frag_off;
 	__u32   id;
-} __attribute__ ((aligned (1)))  t_ipv6_frag_hdr;
+} __attribute__((packed))  t_ipv6_frag_hdr;
 
 static inline void * ip6_data(t_ipv6_hdr *ip6h)
 {
@@ -331,7 +331,7 @@ typedef struct
 	__u8	bz;
 	__u8	protocol;
 	__u16	len;
-} __attribute__ ((aligned (1))) t_tcp_udp_pseudo_hdr6;
+} __attribute__((packed)) t_tcp_udp_pseudo_hdr6;
 
 #define IPPROTO_HOPOPTS		0	/* IPv6 hop-by-hop options	*/
 #define IPPROTO_ROUTING		43	/* IPv6 routing header		*/
@@ -408,7 +408,7 @@ typedef struct
     uint8_t base_value[8];
     uint8_t max_value[8];
     uint32_t step_size;
-} __attribute__ ((aligned (1))) t_rule;
+} __attribute__((packed)) t_rule;
 
 #define    MAX_FIELD_RULE_NUM    (10)
 typedef struct
@@ -431,7 +431,7 @@ typedef struct
     //non save info
     uint32_t err_flags;
 
-} __attribute__ ((aligned (1))) t_stream;
+} __attribute__((packed)) t_stream;
 
 /* t_stream.flags */
 #define    CHECK_SUM_IP      0x1

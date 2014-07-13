@@ -1,8 +1,8 @@
 
-	linux-dev-framework v1.0.5
+	linux-dev-framework v1.0.6
 
-发布日期：2014-07-10
+发布日期：2014-07-13
 
 更新内容：
 
-增加了对SIGSEGV异常的调用链打印功能。
+完善了部分代码，apps目录下增加了一些示例代码。

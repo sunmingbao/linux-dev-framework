@@ -21,7 +21,7 @@
 #include <sys/resource.h>
 #include <signal.h>
 #include "debug.h"
-#include "file_utils.h"
+#include "config_file_ops.h"
 #include "log.h"
 
 #define COMMENT_CHARACTER			'#'
