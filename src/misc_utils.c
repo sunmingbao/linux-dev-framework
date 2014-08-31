@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <ctype.h>
-
+#include <time.h>
 #include <syslog.h>
 #include <fcntl.h>
 #include <sys/resource.h>

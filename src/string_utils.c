@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "string_utils.h"
 #include "debug.h"

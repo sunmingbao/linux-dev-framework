@@ -18,11 +18,11 @@
 #include <dlfcn.h>
 
 #if defined(__i386)
-#define    UL_FMT_STR    "0x%08x"
+#define    UL_FMT_STR    "0x%08lx"
 #define    REG_BP_NO     REG_EBP
 #define    REG_PC_NO     REG_EIP
 #elif defined( __x86_64)
-#define    UL_FMT_STR    "0x%016x"
+#define    UL_FMT_STR    "0x%016lx"
 #define    REG_BP_NO     REG_RBP
 #define    REG_PC_NO     REG_RIP
 #else
@@ -49,7 +49,8 @@ void print_gregs(ucontext_t *pt_ucontext)
     for(i = 0; i < NGREG; i++)
     {
         if (i % 4 == 0) printf("\n");
-        printf("reg[%02d]=" UL_FMT_STR "    ", i, pt_ucontext->uc_mcontext.gregs[i]);
+        printf("reg[%02d]=" UL_FMT_STR "    "
+            , i, (unsigned long)(pt_ucontext->uc_mcontext.gregs[i]));
     }
     printf("\n");
 

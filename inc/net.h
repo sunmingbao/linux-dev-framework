@@ -12,6 +12,7 @@
 #define __NET_H_
 
 #include <stdint.h>
+#include <arpa/inet.h>
 #include "defs.h"
 
 
@@ -86,6 +87,7 @@ static inline void * eth_data(void *p_eth_hdr)
     return p_eth_hdr+eth_hdr_len(p_eth_hdr);
 }
 
+#if 0  /* <arpa/inet.h> has defined these macros */
 
 #define  IPPROTO_IP    0
 #define  IPPROTO_ICMP  1
@@ -93,6 +95,14 @@ static inline void * eth_data(void *p_eth_hdr)
 #define  IPPROTO_IPIP  4
 #define  IPPROTO_TCP   6
 #define  IPPROTO_UDP  17
+
+#define IPPROTO_HOPOPTS		0	/* IPv6 hop-by-hop options	*/
+#define IPPROTO_ROUTING		43	/* IPv6 routing header		*/
+#define IPPROTO_FRAGMENT	44	/* IPv6 fragmentation header	*/
+#define IPPROTO_ICMPV6		58	/* ICMPv6			*/
+#define IPPROTO_NONE		59	/* IPv6 no next header		*/
+#define IPPROTO_DSTOPTS		60	/* IPv6 destination options	*/
+#endif
 
 typedef struct 
 {
@@ -333,12 +343,6 @@ typedef struct
 	__u16	len;
 } __attribute__((packed)) t_tcp_udp_pseudo_hdr6;
 
-#define IPPROTO_HOPOPTS		0	/* IPv6 hop-by-hop options	*/
-#define IPPROTO_ROUTING		43	/* IPv6 routing header		*/
-#define IPPROTO_FRAGMENT	44	/* IPv6 fragmentation header	*/
-#define IPPROTO_ICMPV6		58	/* ICMPv6			*/
-#define IPPROTO_NONE		59	/* IPv6 no next header		*/
-#define IPPROTO_DSTOPTS		60	/* IPv6 destination options	*/
 
 static inline int ip_pkt_is_frag(t_ether_packet *pt_eth_hdr)
 {
@@ -369,7 +373,6 @@ static inline int ip_frag_offset(t_ether_packet *pt_eth_hdr)
 
 static inline int ip_pkt_can_frag(t_ether_packet *pt_eth_hdr)
 {
-    t_ip_hdr *iph = eth_data(pt_eth_hdr);
     int type = eth_type(pt_eth_hdr);
     if (ip_pkt_is_frag(pt_eth_hdr))
         return 0;

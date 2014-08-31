@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include "debug.h"
 
 /**
 *@brief  设置串口通信速率

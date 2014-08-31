@@ -10,7 +10,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include "common.h"
 #include "net.h"
+
+int str2int(char *info)
+{
+    if (strchr(info, 'x') || strchr(info, 'X'))
+        return strtol(info+0,NULL,16);
+    else        
+        return strtol(info+0,NULL,10);
+}
 
 void ip_str2n(void *field_addr, char *info)
 {
@@ -26,6 +36,18 @@ void ip_n2str(char *info, void * field_addr)
             , (addr>>8) & 0xff
             , (addr) & 0xff);
 
+}
+
+void mac_n2str(char *info, void *field_addr)
+{
+unsigned char *mac = field_addr;
+sprintf(info, "%02hhx %02hhx %02hhx %02hhx %02hhx %02hhx"
+            , mac[0]
+            , mac[1]
+            , mac[2]
+            , mac[3]
+            , mac[4]
+            , mac[5]);
 }
 
 
@@ -90,7 +112,7 @@ void ip6_addr_no_mh(char *dst, char *src)
     dst[0]=0;
 	while (isxdigit(*p_digit))
 	{
-	    sprintf(dst+i*4, "%04s", p_digit);
+	    sprintf(dst+i*4, "%4s", p_digit);
 	    p_digit += strlen(p_digit)+1;
         i++;
 		
@@ -101,7 +123,6 @@ void ip6_str2n(void *field_addr, char *info)
 {
     char str_addr[64];
     char *db_mh;
-    char *p_digit;
     char pure_digits[33];
     char pure_digits_hdr[64]={0};
     char pure_digits_tail[64]={0};
@@ -660,7 +681,6 @@ void get_pkt_desc_info_v4(char *info, void* p_eth_hdr)
     t_ip_hdr *iph=eth_data(p_eth_hdr);
     t_icmp_hdr *icmp_hdr = ip_data(iph);
     t_tcp_hdr *tcp_hdr = ip_data(iph);
-    char info_2[64];
 
     switch (iph->protocol)
     {
