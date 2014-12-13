@@ -86,7 +86,7 @@ int udp_socket_init(const char *ipstr, uint16_t port)
     uint32_t ip = htonl(INADDR_ANY);
     struct sockaddr_in sock_addr;
     
-    if (ipstr != NULL) ip = inet_addr(ipstr);
+    if (ipstr != NULL && strcmp(ipstr, "0.0.0.0")) ip = inet_addr(ipstr);
     make_sockaddr(&sock_addr, ip, htons(port));
 
     return udp_socket_init_2(&sock_addr);

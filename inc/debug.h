@@ -24,6 +24,12 @@
         printf("DBG:%s(%d)-%s:\n"fmt"\n", __FILE__,__LINE__,__FUNCTION__,##args); \
     } while (0)
 
+#define    DBG_PRINT_S(fmt, args...) \
+    do \
+    { \
+        printf("DBG:%s(%d)-%s:\n"fmt"\n", strrchr(__FILE__, '/')+1,__LINE__,__FUNCTION__,##args); \
+    } while (0)
+
 #define    DBG_PRINT_QUIT(fmt, args...) \
     do \
     { \

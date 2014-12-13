@@ -208,6 +208,20 @@ int restore_signal_proc()
 
 
 
+void itimer_init(int s, int us)
+{
+    struct itimerval timer;
+
+    timer.it_value.tv_sec = s;
+    timer.it_value.tv_usec = us;
+
+    timer.it_interval.tv_sec = s;
+    timer.it_interval.tv_usec = us;
+
+    if (setitimer(ITIMER_REAL, &timer, NULL))
+        ErrSysLogQuit("setitimer failed");
+
+}
 
 
 int register_sighandler(int signum, void (*handler)(int))
@@ -224,6 +238,31 @@ int register_sighandler(int signum, void (*handler)(int))
     return 0;
 }
 
+int fd_readable(int fd, int usec)
+{
+    fd_set rfds;
+    struct timeval tv;
+    int retval;
+
+    FD_ZERO(&rfds);
+    FD_SET(fd, &rfds);
+
+    tv.tv_sec = 0;
+    tv.tv_usec = usec;
+
+    retval = select(fd + 1, &rfds, NULL, NULL, &tv);
+    if (retval == -1)
+    {
+       perror("select()");
+       return 0;
+    }
+    if (retval)
+    {
+        return 1;
+    }
+
+    return 0;
+}
 
 
 void print_time()

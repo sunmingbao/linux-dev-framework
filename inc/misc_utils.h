@@ -19,6 +19,7 @@ int register_sighandler(int signum, void (*handler)(int));
 int get_cmd_result_int(const char *cmd, int *result_code);
 int get_cmd_result(char *buf, int buflen, const char *cmd);
 int mem_addr_vir2phy(unsigned long vir, unsigned long *phy);
-
+int fd_readable(int fd, int usec);
+void itimer_init(int s, int us);
 #endif
 
