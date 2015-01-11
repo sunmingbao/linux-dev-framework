@@ -27,7 +27,7 @@
 
 static char     ip[40] = "0.0.0.0";
 static uint16_t port   = 8888;
-
+static MM_HANDLE hd;
 typedef struct
 {
     struct list_head list;
@@ -134,7 +134,7 @@ static void delete_req(t_conn_req  *pt_req)
 static void release_req(t_conn_req  *pt_req)
 {
     delete_req(pt_req);
-    free_buffer(pt_req);
+    free_buffer(hd, pt_req);
 }
 
 static void add_req(t_conn_req  *pt_req)
@@ -189,7 +189,7 @@ static void main_loop()
             {
                 release_oldest_req();
             }
-            pt_req=alloc_buffer();
+            pt_req=alloc_buffer(hd);
         }
         else
         {
@@ -281,7 +281,7 @@ static void init_internal_struct()
 {
     int i;
     
-    init_buffer(sizeof(t_conn_req), MAX_REQ_NUM);
+    hd = create_buffer_manager(sizeof(t_conn_req), MAX_REQ_NUM);
     INIT_LIST_HEAD(&all_reqs);
 
     for (i=0;i<ARRAY_SIZE(hash_reqs);i++)

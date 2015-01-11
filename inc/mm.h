@@ -10,9 +10,16 @@
 
 #ifndef  __MM_H__
 #define  __MM_H__
-
-int init_buffer(int buf_size, int num);
-void free_buffer(void *buf);
-void *alloc_buffer();
+#include <stdint.h>
+typedef    void *    MM_HANDLE;
+typedef int (*p_func)(void *buf);
+MM_HANDLE create_buffer_manager(int buf_size, int num);
+int  MM_HANDLE_IS_VALID(MM_HANDLE hd);
+void free_buffer(MM_HANDLE hd, void *buf);
+void *alloc_buffer(MM_HANDLE hd);
+void add_to_all_link(MM_HANDLE hd, void *buf);
+void delete_from_all_link(MM_HANDLE hd, void *buf);
+void for_each_buf_in_all_link(MM_HANDLE hd, p_func usr_func);
+uint32_t free_buffer_num(MM_HANDLE hd);
 #endif
 
