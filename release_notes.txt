@@ -1,10 +1,8 @@
 
-	linux-dev-framework v1.0.8
+	linux-dev-framework v1.0.9
 
-发布日期：2014-12-13
+发布日期：2015-01-11
 
 更新内容：
 
-apps目录中增加了p2p程序。
-apps目录中增加了guard程序及启动/停止脚本。
-扩充/完善了部分例程。
+完善内存管理例程。
