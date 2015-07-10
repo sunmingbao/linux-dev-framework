@@ -8,6 +8,10 @@
  * 邮箱: sunmingbao@126.com
  */
 
+/* 
+ * 本程序实现了查看进程中的全局变量值，以及执行进程中的调试函数的功能。
+ * 目前功能还不完善。
+ */
 
 #include <stdio.h>
 #include <errno.h>

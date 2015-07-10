@@ -8,6 +8,12 @@
  * 邮箱: sunmingbao@126.com
  */
 
+/* 
+ * 本程序实现了向tap口发包的功能，支持速率控制。
+ * 同时，本程序可以将tap口加入到ovs网桥中，
+ * 从而可以向网桥灌包。
+ */
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
