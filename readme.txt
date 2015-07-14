@@ -11,6 +11,8 @@
     具体版权说明见COPYING.txt。
     本软件的编译方法见Build.txt。
 
+    最新源码：http://sourceforge.net/p/linux-dev-framework/code/ci/master/tree/
+
 本软件的目录结构大致如下：
 
 |
@@ -24,13 +26,17 @@
 |
 |-- apps
 |   |-- *.c
-
+|
+|-- misc
+|   |-- *
 
 各目录项的用途如下：
 inc      目录中存放.h文件。
 src      目录中存放不带main函数的.c文件。
 apps     目录中存放带有main函数的.c文件。
-makefile 对源码进行编译。
+makefile 对上述目录中的源码进行编译。
+
+misc     目录中是一些可能有用但比较杂乱的文件，他们不参与上述编译活动。
 
 编译的过程如下：
 src目录下的所有.c文件被编译合并成一个库，库名为app_lib。

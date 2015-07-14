@@ -8,10 +8,18 @@
  * 邮箱: sunmingbao@126.com
  */
 
+
+
 /* 
  * 本程序实现了向tap口发包的功能，支持速率控制。
  * 同时，本程序可以将tap口加入到ovs网桥中，
  * 从而可以向网桥灌包。
+ *
+ * 本程序使用了pcap库。若没有，需要先安装此库。
+ * 本程序的编译及运行命令如下：
+ * gcc tap_writer.c -lpcap -lpthread
+ * ./a.out  --input-file=test.pcap --tap-name=smbtest --add-tap-to-ovs-br=ovsbr
+ *
  */
 
 #define _GNU_SOURCE
@@ -33,12 +41,6 @@
 #include <pcap.h>
 
 
-/* 
-gcc tap_writer.c -lpcap -lpthread
-./a.out  --input-file=test.pcap --tap-name=smbtest --add-tap-to-ovs-br=ovsbr
-
-
-*/
 static const char *version = "1.0.2";
 static const char *app_name = "tap_writer";
 

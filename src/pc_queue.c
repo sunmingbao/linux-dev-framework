@@ -61,13 +61,13 @@ int   pc_que_enq_try(t_pc_que *pt_q, void *data, int32_t   para_int, void *para)
     if (pt_q->pt_p_ptr->valid)
         return 1;
 
-    pt_entry = pt_q->pt_p_ptr->data;
+    pt_entry = pt_q->pt_p_ptr;
 
     pt_entry->data = data;
     pt_entry->para_int = para_int;
     pt_entry->para = para;
     pt_entry->valid = 1;
-    
+
     if (pt_q->pt_p_ptr==pt_q->pt_tail)
         pt_q->pt_p_ptr = pt_q->pt_head;
     else
