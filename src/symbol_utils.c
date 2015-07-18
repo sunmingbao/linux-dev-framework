@@ -29,6 +29,7 @@ int init_symbol()
         DBG_PRINT("%s\n", dlerror());
         exit(1);
     }
+    return 0;
 }
 int var_value(const char *name)
 {

@@ -32,10 +32,10 @@ int get_log_file_fd()
     return fd_log_file;
 }
 
-int get_file_size()
+int get_file_size(int fd)
 {
     struct stat buf;
-    int ret = stat(log_file_name, &buf);
+    int ret = fstat(fd, &buf);
     if (ret)
     {
         ERR_DBG_PRINT("stat %s failed", log_file_name);
@@ -47,12 +47,21 @@ int get_file_size()
     return buf.st_size;
 }
 
+void new_log_file_name()
+{
+    time_t log_time = time(NULL);
+    sprintf(log_file_name, "%s", old_log_file_name);
+    strftime(log_file_name+strlen(log_file_name),  32, "(%Y%m%d_%H%M%S).log", localtime(&log_time));
+
+
+}
+
 int init_log(char *file_name, int file_size)
 {
     int file_name_buf_len;
     if (log_inited) return 0;
     max_log_file_size = file_size;
-    file_name_buf_len = strlen(file_name)+16;
+    file_name_buf_len = strlen(file_name)+32;
     log_file_name     = malloc(file_name_buf_len);
     old_log_file_name = malloc(file_name_buf_len);
     if ((NULL==log_file_name)||(NULL==old_log_file_name))
@@ -63,11 +72,11 @@ int init_log(char *file_name, int file_size)
 
     }
     
-    sprintf(log_file_name, "%s", file_name);
-    sprintf(old_log_file_name, "%s.old", file_name);
+    sprintf(old_log_file_name, "%s", file_name);
+    new_log_file_name();
 
     fd_log_file=open(log_file_name
-            , O_CREAT|O_WRONLY|O_APPEND
+            , O_CREAT|O_WRONLY|O_APPEND|O_TRUNC
             , S_IRUSR | S_IWUSR | S_IRGRP);
 
     if (fd_log_file < 0)
@@ -96,15 +105,14 @@ int write_file(void *buf, int len)
 
     if (!log_inited) return -1;
     
-    file_size = get_file_size();
+    file_size = get_file_size(fd_log_file);
     
     if (file_size>=max_log_file_size)
     {
-        unlink(old_log_file_name);
         close_file();
-        rename(log_file_name, old_log_file_name);
+        new_log_file_name();
         fd_log_file=open(log_file_name
-            , O_CREAT|O_WRONLY|O_TRUNC
+            , O_CREAT|O_WRONLY|O_APPEND|O_TRUNC
             , S_IRUSR | S_IWUSR | S_IRGRP);
 
         if (fd_log_file < 0)
