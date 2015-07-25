@@ -11,7 +11,7 @@
     具体版权说明见COPYING.txt。
     本软件的编译方法见Build.txt。
 
-    最新源码：http://sourceforge.net/p/linux-dev-framework/code/ci/master/tree/
+    最新源码：https://github.com/sunmingbao/linux-dev-framework/archive/master.zip
 
 本软件的目录结构大致如下：
 

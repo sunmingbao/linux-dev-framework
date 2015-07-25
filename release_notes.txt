@@ -1,9 +1,9 @@
 
-	linux-dev-framework v1.1.2
+	linux-dev-framework v1.1.3
 
-发布日期：2015-07-18
+发布日期：2015-07-25
 
 更新内容：
 
-增加了一点代码。
-消除了部分编译告警。
+完善了symbol_utils。
+修改了readme。
