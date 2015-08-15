@@ -70,7 +70,7 @@ static int parse_func_call(char *buf, func_type *fun_addr, long *args)
     para_str_begin++;
     
     *fun_addr = dlsym(handle, buf);
-    if (!fun_addr)
+    if (!(*fun_addr))
     {
         printf("unknown function %s", func_name);
         return -1;
@@ -135,6 +135,27 @@ static void show_var_info(const char *var_name)
 
 }
 
+static void assign_var(char *buf)
+{
+    char *var_name, *para_str_begin;
+    void *var_addr;
+
+    var_name = buf;
+    para_str_begin = strchr(buf, '=');
+    *para_str_begin = 0;
+    para_str_begin++;
+    
+    var_addr = dlsym(handle, var_name);
+    if (!var_addr)
+    {
+        printf("unknown var %s", var_name);
+        return;
+    }
+
+    *(uint64_t *)var_addr=strtol(para_str_begin,NULL,0);
+    show_var_info(var_name);
+
+}
 
 static void exec_function(char *call_func_str)
 {
@@ -202,7 +223,12 @@ void d(void *start_addr, long length)
 static void proccess_cmd(char *cmd_line)
 {
     if (strchr(cmd_line, '(')==NULL)
-        show_var_info(cmd_line);
+    {
+        if (strchr(cmd_line, '=')==NULL)
+            show_var_info(cmd_line);
+        else
+            assign_var(cmd_line);
+    }
     else
         exec_function(cmd_line);
 }
