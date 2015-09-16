@@ -9,6 +9,7 @@
 # 
 
 # CROSS_COMPILE=arm-linux-
+COMPILE_TYPE:=release
 export os_name:=$(shell uname)
 ifeq ($(os_name),Linux)
 export is_linux:=yes
@@ -17,7 +18,13 @@ export is_linux:=no
 endif
 
 export CC:=$(CROSS_COMPILE)gcc
-export CFLAGS:=-c -O2 -Wall -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once
+ifeq ($(COMPILE_TYPE),debug)
+    export CFLAGS:=-c -g
+else
+    export CFLAGS:=-c -O2 -Wall -fno-strict-overflow -fno-strict-aliasing -fno-omit-frame-pointer
+endif
+
+
 export LD:=$(CROSS_COMPILE)ld
 export AR:=$(CROSS_COMPILE)ar
 
