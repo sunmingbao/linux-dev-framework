@@ -158,56 +158,6 @@ int wait_for_file_exists(int sec, char *file_path)
 }
 
 
-
-int ignore_single_signal_proc(int sig)
-{
-    struct sigaction    sa;
-    sa.sa_handler = SIG_IGN;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags =0; 
-    
-    if (sigaction(sig, &sa, NULL) < 0)
-    {
-        SysLog("can't ignore %d", sig);
-        return -1;
-    }
-
-    return 0;
-}
-
-int restore_single_signal_proc(int sig)
-{
-    struct sigaction    sa;
-    sa.sa_handler = SIG_DFL;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags =0; 
-    
-    if (sigaction(sig, &sa, NULL) < 0)
-    {
-        ErrSysLog("can't ignore %d", sig);
-        return -1;
-    }
-
-    return 0;
-}
-
-int restore_signal_proc()
-{
-    int i;
-
-    for (i = SIGRTMIN; i <= SIGRTMAX; i++)
-    {
-        if (restore_single_signal_proc(i) < 0)
-        {
-            return -1;
-        }
-    }
-    
-    return 0;
-}
-
-
-
 void itimer_init(int s, int us)
 {
     struct itimerval timer;
