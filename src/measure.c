@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <string.h>
 #include "measure.h"
+#include "misc_utils.h"
 #include "debug.h"
 
 t_measure  **g_pt_measures;
@@ -23,22 +24,12 @@ static unsigned  cur_measures_cnt, max_measures_cnt;
 static pthread_mutex_t measures_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static uint64_t cpu_freq;
-static void measure_cpu_freq()
-{
-    uint64_t t1, t2;
-    t1 = rdtsc();
-    sleep(3);
-    t2 = rdtsc();
-    cpu_freq = (t2-t1)/3;
-    cpu_freq /= 1000000;
-    cpu_freq *= 1000000;
-}
 
 int init_measure(int max_cnt)
 {
     g_pt_measures = malloc(sizeof(t_measure)*max_cnt);
     max_measures_cnt = max_cnt;
-    measure_cpu_freq();
+    cpu_freq=get_cpu_freq();
     return NULL==g_pt_measures;
 }
 

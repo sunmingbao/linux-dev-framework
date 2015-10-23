@@ -14,5 +14,6 @@
 #include <time.h>
 
 int create_posix_timer(timer_t *timerid, void *timer_handler, int sec, int nano_sec);
+void itimer_init(int s, int us);
 #endif
 

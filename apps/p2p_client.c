@@ -33,6 +33,7 @@
 #include "socket.h"
 #include "common.h"
 #include "misc_utils.h"
+#include "timer_utils.h"
 #include "debug.h"
 #include "trace_exception.h"
 

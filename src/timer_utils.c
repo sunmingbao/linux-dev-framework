@@ -50,4 +50,19 @@ int create_posix_timer(timer_t *timerid, void *timer_handler, int sec, int nano_
 }
 
 
+#include <sys/time.h>
+void itimer_init(int s, int us)
+{
+    struct itimerval timer;
+
+    timer.it_value.tv_sec = s;
+    timer.it_value.tv_usec = us;
+
+    timer.it_interval.tv_sec = s;
+    timer.it_interval.tv_usec = us;
+
+    if (setitimer(ITIMER_REAL, &timer, NULL))
+        DBG_PRINT("setitimer failed");
+
+}
 

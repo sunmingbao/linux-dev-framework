@@ -26,6 +26,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
+#include "misc_utils.h"
+#include "sys_utils.h"
 #include "debug.h"
 #include "defs.h"
 #include "log.h"
@@ -158,20 +160,6 @@ int wait_for_file_exists(int sec, char *file_path)
 }
 
 
-void itimer_init(int s, int us)
-{
-    struct itimerval timer;
-
-    timer.it_value.tv_sec = s;
-    timer.it_value.tv_usec = us;
-
-    timer.it_interval.tv_sec = s;
-    timer.it_interval.tv_usec = us;
-
-    if (setitimer(ITIMER_REAL, &timer, NULL))
-        ErrSysLogQuit("setitimer failed");
-
-}
 
 
 int register_sighandler(int signum, void (*handler)(int))
@@ -214,6 +202,14 @@ int fd_readable(int fd, int usec)
     return 0;
 }
 
+uint64_t get_cpu_freq()
+{
+    uint64_t t1, t2;
+    t1 = rdtsc();
+    nano_sleep(1,0);
+    t2 = rdtsc();
+    return ((t2-t1)/1000000)*1000000;
+}
 
 void print_time()
 {

@@ -28,12 +28,12 @@ int sig_has_no_handler(int sig)
 
     if (sa.sa_flags & SA_SIGINFO)
     {
-        return sa.sa_sigaction==SIG_IGN || 
-               sa.sa_sigaction==SIG_DFL;
+        return sa.sa_sigaction==(void *)SIG_IGN || 
+               sa.sa_sigaction==(void *)SIG_DFL;
     }
 
-    return sa.sa_handler==SIG_IGN || 
-               sa.sa_handler==SIG_DFL;
+    return sa.sa_handler==(void *)SIG_IGN || 
+               sa.sa_handler==(void *)SIG_DFL;
 }
 
 int register_sig_proc(int sig, void *sig_handler)
