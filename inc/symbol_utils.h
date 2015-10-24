@@ -18,6 +18,6 @@
 int init_symbol();
 int var_value(const char *name);
 int exec_func(const char *input);
-
+void proccess_cmd(char *cmd_line);
 
 #endif

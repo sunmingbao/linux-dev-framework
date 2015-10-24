@@ -13,14 +13,16 @@
 #include <pty.h>
 #include <arpa/telnet.h>
 #include <ctype.h>
-
+#include <string.h>
 #include "telnetd4dbg.h"
 #include "socket.h"
+#include "symbol_utils.h"
 #include "misc_utils.h"
 #include "io_utils.h"
+#include "string_utils.h"
 #include "debug.h"
 
-#define    DEBUG_SHELL_HINT    "[debug_shell]"
+#define    DEBUG_SHELL_HINT    "[debug_shell]#"
 static uint16_t server_port;
 static pthread_t misc_thread;
 static int ori_std_input, ori_std_output, ori_std_err;
@@ -46,14 +48,17 @@ static void redirect_io(int fd)
     dup2(fd,2);
 }
 
-int shell_thread_exited = 1;
+int shell_thread_should_exit;
 int shell_quit_occurred;
 void term_session()
 {
     if (fd_conn==0) return;
     
     restore_ori_io();
-    while (!shell_thread_exited) nano_sleep(0, 10000000);
+    shell_thread_should_exit = 1;
+
+    while (!shell_quit_occurred) nano_sleep(0, 10000000);
+
     close(fd_conn);
     close(fd_pty_slave);
     close(fd_pty_master);
@@ -91,31 +96,99 @@ static int tty_cfg(int fd)
     return 0;  
 }
 
-static pthread_t hehe;
-static void back_input(char *buf, int cur_len, int nr_back_step)
+static char shell_buf[512];
+static int shell_buf_cur_len;
+
+#define    MAX_HISTORY_CMD_NUM    (128)
+typedef struct
+{
+    char name[512];
+    int  len;
+} t_history_cmd;
+static t_history_cmd histotry_cmds[MAX_HISTORY_CMD_NUM];
+static int cur_histotry_cmds_num;
+int cur_histotry_cmds_roll_idx;
+
+
+void update_histotry_cmds(char *cmd)
+{
+    if (cur_histotry_cmds_num==MAX_HISTORY_CMD_NUM)
+    {
+        memmove(histotry_cmds, &(histotry_cmds[1])
+            ,sizeof(histotry_cmds[1])*(MAX_HISTORY_CMD_NUM-1));
+
+        cur_histotry_cmds_num--;
+
+    }
+
+    histotry_cmds[cur_histotry_cmds_num].len = 
+    sprintf(histotry_cmds[cur_histotry_cmds_num].name, "%s", cmd);
+    cur_histotry_cmds_num++;
+    cur_histotry_cmds_roll_idx = cur_histotry_cmds_num;
+
+}
+
+static void refresh_shell_buf_display()
+{
+    printf_to_fd(1, "\r%s", DEBUG_SHELL_HINT);
+    write_certain_bytes(1, shell_buf, shell_buf_cur_len);
+}
+
+static void back_input(int nr_back_step)
 {
     int i;
     printf_to_fd(1, "\r%s", DEBUG_SHELL_HINT);
-    for (i=0;i<cur_len;i++)
+    for (i=0;i<shell_buf_cur_len;i++)
         printf_to_fd(1, " ");
 
-    printf_to_fd(1, "\r%s", DEBUG_SHELL_HINT);
-    write_certain_bytes(1, buf, cur_len-nr_back_step);
+    shell_buf_cur_len -= nr_back_step;
+    refresh_shell_buf_display();
 }
 
-int read_input(char *buf, int size, int is_password)
+void history_cmd_roll_prev()
+{
+    if (cur_histotry_cmds_num>0 && cur_histotry_cmds_roll_idx>0)
+    {
+        cur_histotry_cmds_roll_idx--;
+        strcpy(shell_buf, histotry_cmds[cur_histotry_cmds_roll_idx].name);
+        if (histotry_cmds[cur_histotry_cmds_roll_idx].len<shell_buf_cur_len)
+            back_input(shell_buf_cur_len -
+            histotry_cmds[cur_histotry_cmds_roll_idx].len);
+
+         shell_buf_cur_len = histotry_cmds[cur_histotry_cmds_roll_idx].len;
+         refresh_shell_buf_display();
+    }
+}
+
+void history_cmd_roll_next()
+{
+    if (cur_histotry_cmds_num>0 && cur_histotry_cmds_roll_idx<(cur_histotry_cmds_num-1))
+    {
+        cur_histotry_cmds_roll_idx++;
+        strcpy(shell_buf, histotry_cmds[cur_histotry_cmds_roll_idx].name);
+        if (histotry_cmds[cur_histotry_cmds_roll_idx].len<shell_buf_cur_len)
+            back_input(shell_buf_cur_len -
+            histotry_cmds[cur_histotry_cmds_roll_idx].len);
+
+         shell_buf_cur_len = histotry_cmds[cur_histotry_cmds_roll_idx].len;
+         refresh_shell_buf_display();
+    }
+}
+
+int read_input(int is_password)
 {
     char c, two_byes[2];
-    int ret, cur_len=0;
+    int ret;
 
 READ_BYTE:
+    if (!fd_readable(0, 0, 50000))
+            return 0;
     ret=read_reliable(0, &c, 1);
     if (ret!=1) goto READ_BYTE;
     if (c==0x00 || c==0x0a) goto READ_BYTE;
-    if (c==0x08 && cur_len>0)
+    if (c==0x08 && shell_buf_cur_len>0)
     {
-        back_input(buf, cur_len, 1);
-        cur_len--;
+        back_input(1);
         goto READ_BYTE;
     }
 
@@ -123,9 +196,9 @@ READ_BYTE:
     {
         read_certain_bytes(0, two_byes, 2);
         if (two_byes[0]==0x5b && two_byes[1]==0x41)
-            ;//history_cmd_prev
+            history_cmd_roll_prev();
         else if (two_byes[0]==0x5b && two_byes[1]==0x42)
-            ;//history_cmd_next
+            history_cmd_roll_next();
 
         goto READ_BYTE;
 
@@ -135,14 +208,15 @@ READ_BYTE:
 
     if (c!=' ' && !isgraph(c)) goto READ_BYTE;
 
-        buf[cur_len++]=c;
+        shell_buf[shell_buf_cur_len++]=c;
         printf_to_fd(1, "%c", c);
         goto READ_BYTE;
 
 
 EXIT:
     printf_to_fd(1, "\n");
-    return cur_len;
+    shell_buf[shell_buf_cur_len] = 0;
+    return 1;
 }
 
 void print_hint()
@@ -150,24 +224,58 @@ void print_hint()
     printf_to_fd(1, DEBUG_SHELL_HINT, strlen(DEBUG_SHELL_HINT));
 }
 
-static void *the_shell_thread(void *arg)
+static void print_intro()
+{
+    printf_to_fd(1, "\n ****debug_shell started****\n"
+        "you can input var names to see var info\n"
+        "you can input d(addrress, len) to see memory contents\n"
+        "you can input xxx(1, 0x2, \"abc\") to execute function xxx\n"
+        "caution: every args's size of function xxx must == sizeof(long)\n");
+}
+
+static pthread_t the_shell_thread;
+static void *the_shell_thread_func(void *arg)
 {
     int ret;
-    char buf[512];
-    
-    while (1)
+    char clean_cmd_line[512];
+    cur_histotry_cmds_num = 0;
+    shell_buf_cur_len=0;
+
+    print_intro();
+    print_hint();
+
+    while (!shell_thread_should_exit)
     {
-        print_hint();
-        if ((ret=read_input(buf, sizeof(buf), 0))>0)
+        ret=read_input(0);
+        if (ret==1)
         {
-            printf_to_fd(1, "got %d bytes", ret);
+            if (shell_buf_cur_len==0)
+                goto CMD_OVER;
+            
+            update_histotry_cmds(shell_buf);
+            shell_buf_cur_len=0;
+            str_trim_all(clean_cmd_line, shell_buf);
+            //printf_to_fd(ori_std_output, "== ret=%s\n", shell_buf);
+            if (strlen(clean_cmd_line)==0)
+                goto CMD_OVER;
+
+            if (strcmp(clean_cmd_line,"quit")==0)
+                goto EXIT;
+
+            proccess_cmd(clean_cmd_line);
+            printf_to_fd(1, "\n");
+CMD_OVER:
+            print_hint();
         }
-        printf_to_fd(1, "\n");
     }
 
-
+EXIT:
+    shell_quit_occurred = 1;
     return NULL;
 }
+
+static char pty2sock_cache[512], *cur_snd_ptr;
+static int pty2sock_cache_len;
 
 int make_new_session(int new_sock_fd)
 {
@@ -191,18 +299,20 @@ int make_new_session(int new_sock_fd)
 
     if (ret<0)
     {
-        ERR_DBG_PRINT("make_new_session failed.");
         return ret;
     }
 
     term_session();
-    
+
+    pty2sock_cache_len = 0;
+
     fd_conn = new_sock_fd;
     fd_pty_master = sv[0];
     fd_pty_slave  = sv[1];
 
     redirect_io(fd_pty_slave);
-    pthread_create(&hehe, NULL, the_shell_thread, NULL);
+    shell_thread_should_exit = 0;
+    pthread_create(&the_shell_thread, NULL, the_shell_thread_func, NULL);
     return 0;
 }
 
@@ -211,7 +321,6 @@ static void remove_iacs(unsigned char *ptr0, int len, int *pnum_totty)
     unsigned char *ptr = ptr0;
     unsigned char *totty = ptr;
     unsigned char *end = ptr + len;
-    int num_totty;
      
     while (ptr < end)
     {
@@ -244,7 +353,7 @@ static void remove_iacs(unsigned char *ptr0, int len, int *pnum_totty)
 static void trans_data_sock2pty()
 {
     char buf[512];
-    int ret, i;
+    int ret;
     
     ret=read_reliable(fd_conn, buf, sizeof(buf));
 //    DBG_PRINT("ret=%d", ret);
@@ -261,19 +370,42 @@ static void trans_data_sock2pty()
     //    DBG_PRINT("%02hhx-%c", buf[i], buf[i]);
 }
 
-static void trans_data_pty2sock()
+static int trans_data_pty2sock()
 {
-    char buf[512];
-    int ret, i;
-    
+    char buf[256];
+    int ret;
+
+    if (pty2sock_cache_len>0) goto DO_SEND_DATA;
+
+    cur_snd_ptr = pty2sock_cache;
+    pty2sock_cache_len = 0;
+
     ret=read_reliable(fd_pty_master, buf, sizeof(buf));
-    if (ret<=0)
+    if (ret<0)
     {
-        term_session();
-        return;
+        return ret;
     }
 
-        write_certain_bytes(fd_conn, buf, ret);
+    buf[ret]=0;
+    //printf_to_fd(ori_std_output, "== ret=%d\n", ret);
+    ret=str_replace_substr(pty2sock_cache, buf, "\n", "\r\n");
+    //printf_to_fd(ori_std_output, "77 ret=%d\n", ret);
+    cur_snd_ptr = pty2sock_cache;
+    pty2sock_cache_len = ret;
+    if (ret==0) return 0;
+
+DO_SEND_DATA:
+    ret=write_reliable(fd_conn, pty2sock_cache, pty2sock_cache_len);
+    //printf_to_fd(ori_std_output, "write ret=%d\n", ret);
+    if (ret<0)
+    {
+        //printf_to_fd(ori_std_output, "%s", strerror(errno));
+        return ret;
+    }
+    pty2sock_cache_len -= ret;
+    cur_snd_ptr+=ret;
+
+    return 0;
 }
 
 static void *misc_thread_func(void *arg)
@@ -314,8 +446,8 @@ static void *misc_thread_func(void *arg)
             max_fd=(fd_pty_master>max_fd)?fd_pty_master:max_fd;
         }
 
-        tv.tv_sec = 2;
-        tv.tv_usec = 0;
+        tv.tv_sec = 0;
+        tv.tv_usec = 20000;
 
         retval = select(max_fd + 1, &r_fds, &w_fds, &except_fds, &tv);
         if (retval <= 0)
@@ -334,9 +466,13 @@ static void *misc_thread_func(void *arg)
             trans_data_sock2pty();
         }
 
-        if (FD_ISSET(fd_pty_master, &r_fds))
+        if (FD_ISSET(fd_pty_master, &r_fds)|| (pty2sock_cache_len>0))
         {
-            trans_data_pty2sock();
+            if (trans_data_pty2sock())
+            {
+                    term_session();
+                    continue;
+            }
         
         }
 
@@ -344,9 +480,9 @@ static void *misc_thread_func(void *arg)
         if (FD_ISSET(fd_server, &r_fds))
         {
             tmp_fd=accept(fd_server, NULL, NULL);
+
             if (tmp_fd<0)
             {
-                DBG_PRINT("accept telnetd client failed.");
                 continue;
             }
 

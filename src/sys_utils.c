@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <sched.h>
 #include "sys_utils.h"
+#include "misc_utils.h"
 
 int set_thread_cpu_range(pthread_t thread, int cpu_idx_begin, int cpu_idx_end)
 {

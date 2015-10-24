@@ -21,7 +21,6 @@
 #include "debug.h"
 #include "string_utils.h"
 
-pthread_t  the_shell_thread;
 static  void *handle;
 
 #define   MAX_CMD_LEN    (256)
@@ -116,10 +115,8 @@ static void show_var_info(const char *var_name)
         return;
     }
 
-
     printf("[var address] : %p\n\n"
         "[values] :\n"
-        
         "1 byte :0x%-16"PRIx8  " (%"PRIi8")\n"
         "2 bytes:0x%-16"PRIx16 " (%"PRIi16")\n"
         "4 bytes:0x%-16"PRIx32 " (%"PRIi32")\n"
@@ -131,7 +128,6 @@ static void show_var_info(const char *var_name)
         , *(uint16_t *)var_addr, *(int16_t *)var_addr
         , *(uint32_t *)var_addr, *(int32_t *)var_addr
         , *(uint64_t *)var_addr, *(int64_t *)var_addr);
-
 
 }
 
@@ -220,7 +216,7 @@ void d(void *start_addr, long length)
 }
 
 
-static void proccess_cmd(char *cmd_line)
+void proccess_cmd(char *cmd_line)
 {
     if (strchr(cmd_line, '(')==NULL)
     {
@@ -231,71 +227,11 @@ static void proccess_cmd(char *cmd_line)
     }
     else
         exec_function(cmd_line);
+
+    fflush(stdout);
+
 }
 
-
-static void print_intro()
-{
-    printf("\n ****symbol_shell started****\n"
-        "you can input var names to see var info\n"
-        "you can input d(addrress, len) to see memory contents\n"
-        "you can input xxx(1, 0x2, \"abc\") to execute function xxx\n"
-        "caution: every args's size of function xxx must == sizeof(long)\n");
-}
-
-
-static void print_hint()
-{
-    printf("\n[symbol_shell]");
-}
-
-
-static void *symbol_shell_thread(void *arg)
-{
-    char  raw_cmd_line[MAX_CMD_LEN];
-    char  clean_cmd_line[MAX_CMD_LEN];
-
-
-    print_intro();
-    print_hint();
-    
-    while (NULL != fgets(raw_cmd_line, sizeof(raw_cmd_line), stdin))
-    {
-        str_trim_all(clean_cmd_line, raw_cmd_line);
-        if (strlen(clean_cmd_line)<1)
-            goto THIS_CMD_FINISH;
-
-        proccess_cmd(clean_cmd_line);
-
-THIS_CMD_FINISH:
-        print_hint();
-    }
-
-
-    return NULL;
-}
-
-static int tty_cfg(int fd)
-{ 
-    struct termios options;
-    
-    if  ( tcgetattr( fd,&options)  !=  0) { 
-        DBG_PRINT("get tty cfg fail");     
-        return -1;  
-    }
-
-
-    options.c_cc[VERASE] =  '\b';
-    tcflush(fd,TCIFLUSH);
-    options.c_cc[VMIN] = 0; /* Update the options and do it NOW */
-    if (tcsetattr(fd,TCSANOW,&options) != 0)   
-    { 
-        DBG_PRINT("set tty fail");   
-        return -1;  
-    } 
-    
-    return 0;  
-}
 
 int __attribute__((constructor, used)) init_symbol()
 {
@@ -306,10 +242,5 @@ int __attribute__((constructor, used)) init_symbol()
         exit(1);
     }
 
-
-    tty_cfg(0);
-    
-    pthread_create(&the_shell_thread, NULL, symbol_shell_thread, NULL);
-    
     return 0;
 }

@@ -84,3 +84,27 @@ int str_trim_all(char *output, char * input)
     return str_trim_all_len(output, input, strlen(input));
 }
 
+int str_replace_substr(char *output, char *input, char *from, char *to)
+{
+    int ret = 0, from_len = strlen(from);
+    char *ptr1 = input, *ptr2;
+
+    ptr2 = strstr(input, from);
+    while (ptr2!=NULL)
+    {
+        *ptr2 = 0;
+        ptr2+=from_len;
+        ret+=sprintf(output+ret, "%s%s", ptr1, to);
+        ptr1 = ptr2;
+
+        if (*ptr2==0)
+            goto EXIT;
+        
+        ptr2=strstr(ptr2, from);
+
+    }
+    ret+=sprintf(output+ret, "%s", ptr1);
+
+EXIT:
+    return ret;
+}
