@@ -39,3 +39,12 @@ int bind_cur_thread_to_cpu(int cpu_idx)
     return set_cur_thread_cpu_range(cpu_idx, cpu_idx);
 }
 
+uint64_t get_cpu_freq()
+{
+    uint64_t t1, t2;
+    t1 = rdtsc();
+    nano_sleep(1,0);
+    t2 = rdtsc();
+    return ((t2-t1)/1000000)*1000000;
+}
+

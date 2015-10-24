@@ -49,7 +49,7 @@ export APP_CODE_OBJ_PATH:=$(project_target_path)/app_code/obj
 
 export LDFLAGS:=-rdynamic -L$(project_target_path)/lib/
 #export LDFLAGS := $(LDFLAGS) -static
-export C_LIBS:=-ldl -lpthread -lrt
+export C_LIBS:=-ldl -lpthread -lrt -lutil
 
 .PHONY:default prepare clean
 

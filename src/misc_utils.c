@@ -176,40 +176,6 @@ int register_sighandler(int signum, void (*handler)(int))
     return 0;
 }
 
-int fd_readable(int fd, int usec)
-{
-    fd_set rfds;
-    struct timeval tv;
-    int retval;
-
-    FD_ZERO(&rfds);
-    FD_SET(fd, &rfds);
-
-    tv.tv_sec = 0;
-    tv.tv_usec = usec;
-
-    retval = select(fd + 1, &rfds, NULL, NULL, &tv);
-    if (retval == -1)
-    {
-       perror("select()");
-       return 0;
-    }
-    if (retval)
-    {
-        return 1;
-    }
-
-    return 0;
-}
-
-uint64_t get_cpu_freq()
-{
-    uint64_t t1, t2;
-    t1 = rdtsc();
-    nano_sleep(1,0);
-    t2 = rdtsc();
-    return ((t2-t1)/1000000)*1000000;
-}
 
 void print_time()
 {

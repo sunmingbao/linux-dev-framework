@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 
 int udp_socket_init(const char *ipstr, uint16_t port);
+int tcp_socket_init(const char *ipstr, uint16_t port);
 int udp_socket_recvfrom(int sockfd, void *buf, int buf_size, struct sockaddr_in *peer_addr);
 int udp_socket_sendto(int sockfd, void *buf, int buf_size, struct sockaddr_in *peer_addr);
 void make_sockaddr(struct sockaddr_in *sock_addr, uint32_t ip, uint16_t port);

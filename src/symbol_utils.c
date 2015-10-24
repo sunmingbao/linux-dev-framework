@@ -21,7 +21,7 @@
 #include "debug.h"
 #include "string_utils.h"
 
-static pthread_t  the_shell_thread;
+pthread_t  the_shell_thread;
 static  void *handle;
 
 #define   MAX_CMD_LEN    (256)
@@ -297,7 +297,7 @@ static int tty_cfg(int fd)
     return 0;  
 }
 
-int init_symbol()
+int __attribute__((constructor, used)) init_symbol()
 {
     handle = dlopen(NULL, RTLD_NOW);
     if (!handle) 

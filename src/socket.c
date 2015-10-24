@@ -57,31 +57,33 @@ void make_sockaddr(struct sockaddr_in *sock_addr, uint32_t ip, uint16_t port)
 
 }
 
-int udp_socket_init_2(struct sockaddr_in *sock_addr)
+int socket_init_2(int type, struct sockaddr_in *sock_addr)
 {
     int ret, sockfd;
     
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    sockfd = socket(AF_INET, type, 0);
 
     if (sockfd<0)
     {
-        ErrSysLog("create udp socket failed");
+        ErrSysLog("create socket failed");
         return -1;
     }
-
+    
+    set_useful_sock_opt(sockfd);
+    
     ret=bind(sockfd, (struct sockaddr *)sock_addr, sizeof(struct sockaddr_in));
     if (ret<0)
     {
-        ErrSysLog("bind udp socket to %s:%d failed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
+        ErrSysLog("bind socket to %s:%d failed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
         return -1;
     }
 
-    SysLog("bind udp socket to %s:%d succeed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
+    SysLog("bind socket to %s:%d succeed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
     return sockfd;
 
 }
 
-int udp_socket_init(const char *ipstr, uint16_t port)
+int socket_init(int type, const char *ipstr, uint16_t port)
 {
     uint32_t ip = htonl(INADDR_ANY);
     struct sockaddr_in sock_addr;
@@ -89,10 +91,19 @@ int udp_socket_init(const char *ipstr, uint16_t port)
     if (ipstr != NULL && strcmp(ipstr, "0.0.0.0")) ip = inet_addr(ipstr);
     make_sockaddr(&sock_addr, ip, htons(port));
 
-    return udp_socket_init_2(&sock_addr);
+    return socket_init_2(type, &sock_addr);
 
 }
 
+int udp_socket_init(const char *ipstr, uint16_t port)
+{
+    return socket_init(SOCK_DGRAM, ipstr, port);
+}
+
+int tcp_socket_init(const char *ipstr, uint16_t port)
+{
+    return socket_init(SOCK_STREAM, ipstr, port);
+}
 
 int udp_socket_recvfrom(int sockfd, void *buf, int buf_size, struct sockaddr_in *peer_addr)
 {

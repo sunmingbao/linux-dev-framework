@@ -32,6 +32,7 @@
 #include "p2p.h"
 #include "socket.h"
 #include "common.h"
+#include "io_utils.h"
 #include "misc_utils.h"
 #include "timer_utils.h"
 #include "debug.h"
@@ -201,7 +202,7 @@ void p2p_conn_loop()
 
 WAIT_SOCK_DATA:
         DBG_PRINT("wait for p2p_server response");
-        while (!fd_readable(sock_fd, 0))
+        while (!fd_readable(sock_fd, 0, 0))
         {
             nano_sleep(0, 50000000);
             sleep_cnt++;
@@ -210,7 +211,7 @@ WAIT_SOCK_DATA:
                 
         }
 
-        if (!fd_readable(sock_fd, 0)) continue;
+        if (!fd_readable(sock_fd, 0, 0)) continue;
         
         ret = udp_socket_recvfrom(sock_fd, &reply, sizeof(reply), &sockaddr);
         if (ret<=0)
@@ -274,7 +275,7 @@ static void main_loop()
         if (!connected)
             p2p_conn_loop();
 
-        if (!fd_readable(sock_fd, 0)) goto SLEEP_FOR_NEXT;
+        if (!fd_readable(sock_fd, 0, 0)) goto SLEEP_FOR_NEXT;
         
         ret = udp_socket_recvfrom(sock_fd, msg_buf,  ARRAY_SIZE(msg_buf), &sockaddr);
         if (ret<=0)
