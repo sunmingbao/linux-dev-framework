@@ -8,6 +8,8 @@
  * ” œ‰: sunmingbao@126.com
  */
 
+#define _GNU_SOURCE
+#include <dlfcn.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -20,8 +22,173 @@
 #include <termios.h>
 #include "debug.h"
 #include "string_utils.h"
+#include "misc_utils.h"
+#include "shell_ops.h"
 
 static  void *handle;
+static  char exe_file_path[512];
+
+typedef struct
+{
+    char name[128];
+    unsigned long addr;
+    unsigned long size;
+} t_symbol;
+
+static int nr_symbol;
+static t_symbol *gpt_symbol_tab;
+
+void * addr2symbol(unsigned long addr)
+{
+    int i;
+    t_symbol *pt_symbol;
+    for (i=0;i<nr_symbol;i++)
+    {
+        pt_symbol = &(gpt_symbol_tab[i]);
+        if (addr>=pt_symbol->addr &&
+               addr<(pt_symbol->addr+pt_symbol->size))
+            return pt_symbol;
+    }
+    return NULL;
+}
+
+void * name2symbol(const char *name)
+{
+    int i;
+    t_symbol *pt_symbol;
+    for (i=0;i<nr_symbol;i++)
+    {
+        pt_symbol = &(gpt_symbol_tab[i]);
+        if (!strcmp(name, pt_symbol->name))
+            return pt_symbol;
+    }
+    return NULL;
+}
+
+void * name2addr(const char *name)
+{
+    t_symbol *pt_symbol=name2symbol(name);
+    if (pt_symbol)
+        return (void *)(unsigned long)(pt_symbol->addr);
+    return dlsym(handle, name);
+}
+
+
+int addr2symbol_info(void *addr, Dl_info *info)
+{
+    t_symbol *pt_symbol = addr2symbol((unsigned long)addr);
+    if (!pt_symbol)
+        return dladdr(addr, info);
+    
+    info->dli_sname = pt_symbol->name;
+    info->dli_saddr = (void *)(pt_symbol->addr);
+    info->dli_fname = exe_file_path;
+    return 1;
+}
+
+static int get_symbol_num(const char *exe_file, int *nr)
+{
+    int ret;
+    char cmd_str[512];
+    sprintf(cmd_str, "nm -S %s | wc -l", exe_file);
+    *nr=get_cmd_result_int(cmd_str, &ret);
+    return ret;
+}
+
+void get_symbols(const char *exe_file_path)
+{
+    int ret;
+    char cmd_str[512], file_path[512], line[256];
+    char *next_para;
+    FILE *fp;
+
+    sprintf(cmd_str, "nm -S %s", exe_file_path);
+    ret=cmd2file(cmd_str, file_path);
+    if (ret)
+        return;
+
+    fp = fopen(file_path, "r");
+	if (NULL == fp) 
+    {
+		goto EXIT;
+	}
+    
+	while (NULL != fgets(line, sizeof(line), fp)) 
+    {
+        trim_new_line(line);
+        next_para = strtok(line, " ");
+        if (!next_para)
+            continue;
+        
+        if (!isdigit(next_para[0]))
+        {
+            continue;
+        }
+
+        gpt_symbol_tab[nr_symbol].addr = strtoul(next_para, NULL, 16);
+
+        next_para = strtok(NULL, " ");
+        if (!next_para)
+            continue;
+        
+        if (!isdigit(next_para[0]))
+        {
+            continue;
+        }
+
+        gpt_symbol_tab[nr_symbol].size= strtoul(next_para, NULL, 16);
+
+        next_para = strtok(NULL, " ");
+        if (!next_para)
+            continue;
+
+        next_para = strtok(NULL, " ");
+        if (!next_para)
+            continue;
+
+        strcpy(gpt_symbol_tab[nr_symbol].name, next_para);
+        //if (strcmp(next_para, "the_shell_thread_func")==0)
+            //DBG_PRINT("%lx %lx", gpt_symbol_tab[nr_symbol].addr
+            //, gpt_symbol_tab[nr_symbol].size);
+        nr_symbol++;
+
+	}
+
+    fclose(fp);
+    
+EXIT:
+    unlink(file_path);
+}
+
+void gen_symbol_tab()
+{
+    int symb_num=0;
+    
+    get_self_path(exe_file_path, sizeof(exe_file_path));
+    
+    if (get_symbol_num(exe_file_path, &symb_num))
+        return;
+
+    gpt_symbol_tab = malloc(symb_num*sizeof(t_symbol));
+    if (!gpt_symbol_tab)
+        return;
+
+    get_symbols(exe_file_path);
+
+}
+
+int __attribute__((constructor, used)) init_symbol()
+{
+    handle = dlopen(NULL, RTLD_NOW);
+    if (!handle) 
+    {
+        DBG_PRINT("%s\n", dlerror());
+        exit(1);
+    }
+
+    gen_symbol_tab();
+    return 0;
+}
 
 #define   MAX_CMD_LEN    (256)
 #define   MAX_ARG_NUM    (8)
@@ -81,7 +248,7 @@ static int parse_func_call(char *buf, func_type *fun_addr, long *args)
     *para_str_begin = 0;
     para_str_begin++;
     
-    *fun_addr = dlsym(handle, buf);
+    *fun_addr = name2addr(buf);
     if (!(*fun_addr))
     {
         printf("unknown function %s", func_name);
@@ -121,7 +288,7 @@ static void do_call_func(func_type pfunc, long *args)
 
 static void show_var_info(const char *var_name)
 {
-    void *var_addr = dlsym(handle, var_name);
+    void *var_addr = name2addr(var_name);
     if (!var_addr)
     {
         printf("unknown symbol %s", var_name);
@@ -154,7 +321,7 @@ static void assign_var(char *buf)
     *para_str_begin = 0;
     para_str_begin++;
     
-    var_addr = dlsym(handle, var_name);
+    var_addr = name2addr(var_name);
     if (!var_addr)
     {
         printf("unknown var %s", var_name);
@@ -252,14 +419,4 @@ void proccess_cmd(char *cmd_line)
 }
 
 
-int __attribute__((constructor, used)) init_symbol()
-{
-    handle = dlopen(NULL, RTLD_NOW);
-    if (!handle) 
-    {
-        DBG_PRINT("%s\n", dlerror());
-        exit(1);
-    }
 
-    return 0;
-}

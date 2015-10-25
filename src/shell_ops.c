@@ -14,26 +14,33 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include "io_utils.h"
 #include "debug.h"
 #include "log.h"
 
-int get_cmd_result(char *buf, int buflen, const char *cmd)
+int cmd2file(const char *cmd, char *file_path)
 {
-    char cmd_str[128];
-    int fd;
-    int ret;
+    char cmd_str[512];
+    int ret = get_temp_file(file_path);
+    
+    if (ret<0) return ret;
 
-    char output_file[64];
-
-    get_tmp_file_name(output_file, sizeof(output_file));
-
-        sprintf(cmd_str
+    sprintf(cmd_str
             , "%s  > %s"
             , cmd
-            , output_file);
+            , file_path);
         
-        system(cmd_str);
+    system(cmd_str);
+    return 0;
+}
 
+int get_cmd_result(char *buf, int buflen, const char *cmd)
+{
+    int fd;
+    int ret;
+    char output_file[64];
+
+    cmd2file(cmd, output_file);
     fd = open(output_file, O_RDONLY);
     if (fd == -1 )
     {
@@ -62,8 +69,7 @@ int get_cmd_result_int(const char *cmd, int *result_code)
     int ret = get_cmd_result(buf, sizeof(buf), cmd);
 
     if (result_code != NULL) *result_code = ret;
-
-        return atoi(buf);
+    return atoi(buf);
 }
 
 

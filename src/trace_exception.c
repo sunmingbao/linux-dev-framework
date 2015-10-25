@@ -18,6 +18,7 @@
 #include <dlfcn.h>
 #include "debug.h"
 #include "misc_utils.h"
+#include "symbol_utils.h"
 
 #if defined(__i386)
 #define    UL_FMT_STR    "0x%08lx"
@@ -105,7 +106,7 @@ static void print_call_links(unsigned long *reg_bp, unsigned long reg_pc)
     
     while (reg_bp!=NULL)
     {
-       if(!dladdr((void *)reg_pc, &dlinfo))
+       if(!addr2symbol_info((void *)reg_pc, &dlinfo))
             break;
 
         printf(UL_FMT_STR" - %s+%u (%s)\n",

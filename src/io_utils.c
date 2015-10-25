@@ -10,6 +10,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/select.h>
 #include <stdarg.h>
 #include <errno.h>
@@ -111,3 +112,21 @@ int printf_to_fd(int fd, const char *fmt, ...)
     return write_certain_bytes(fd, buf, len);
 }
 
+int get_temp_file(char *path)
+{
+    char file_name_template[] = "temp_XXXXXX";
+    int ret;
+TRY_AGAIN:
+    ret=mkstemp(file_name_template);
+    if (ret<0)
+    {
+        if (errno==EINTR)
+            goto TRY_AGAIN;
+
+        return ret;
+    }
+
+    close(ret);
+    strcpy(path, file_name_template);
+    return 0;
+}

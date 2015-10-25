@@ -19,6 +19,7 @@ int write_certain_bytes(int fd, const void *buf, size_t count);
 int read_reliable(int fd, void *buf, size_t count);
 int read_certain_bytes(int fd, void *buf, size_t count);
 int printf_to_fd(int fd, const char *fmt, ...);
+int get_temp_file(char *path);
 
 #endif
 

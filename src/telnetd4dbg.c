@@ -8,7 +8,7 @@
  * ” œ‰: sunmingbao@126.com
  */
 
-
+#include "symbol_utils.h"
 #include <pthread.h>
 #include <pty.h>
 #include <arpa/telnet.h>
@@ -16,7 +16,6 @@
 #include <string.h>
 #include "telnetd4dbg.h"
 #include "socket.h"
-#include "symbol_utils.h"
 #include "misc_utils.h"
 #include "io_utils.h"
 #include "string_utils.h"

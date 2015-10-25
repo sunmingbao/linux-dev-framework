@@ -108,3 +108,15 @@ int str_replace_substr(char *output, char *input, char *from, char *to)
 EXIT:
     return ret;
 }
+
+void trim_new_line(char *str)
+{
+    int len = strlen(str);
+    char *tail=str + (len - 1);
+    while (tail>=str && (*tail=='\r' || *tail=='\n'))
+        {
+            *tail = 0;
+            tail--;
+
+        }
+}

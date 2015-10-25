@@ -19,5 +19,6 @@ int str_trim_len(char *output, char * input, int len);
 int str_trim_all_len(char *output, char * input, int len);
 int str_trim_all(char *output, char * input);
 int str_replace_substr(char *output, char *input, char *from, char *to);
+void trim_new_line(char *str);
 #endif
 

@@ -8,16 +8,12 @@
  * ” œ‰: sunmingbao@126.com
  */
 
+#ifndef  __SHELL_OPS_H__
+#define  __SHELL_OPS_H__
 
-#ifndef  __SYMBOL_UTILS_H__
-#define  __SYMBOL_UTILS_H__
-
-#define _GNU_SOURCE
-#include <dlfcn.h>
-
-
-int init_symbol();
-int addr2symbol_info(void *addr, Dl_info *info);
-void proccess_cmd(char *cmd_line);
+int cmd2file(const char *cmd, char *file_path);
+int get_cmd_result_int(const char *cmd, int *result_code);
+int get_cmd_result(char *buf, int buflen, const char *cmd);
 
 #endif
+
