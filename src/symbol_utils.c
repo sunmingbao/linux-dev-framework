@@ -29,39 +29,52 @@ static  void *handle;
 
 typedef  void (*func_type)(long para1, ...);
 
-static void parse_function_args(long *args, char *para_str_begin)
+static int parse_function_args(long *args, char *para_str_begin, char *para_str_end)
+
 {
     int arg_nr = 0;
-    char *p_tmp = strtok(para_str_begin, ",");
-    while (p_tmp && arg_nr<MAX_ARG_NUM)
+    char *p_tmp;
+    char *cur_arg = para_str_begin;
+
+    if (para_str_begin==para_str_end) return 0;
+
+    p_tmp = para_str_begin-1;
+    do 
     {
-        if (isdigit(p_tmp[0]))
+        cur_arg = p_tmp+1;
+        if (cur_arg==para_str_end) return -1;
+        if (!isdigit(cur_arg[0]) && cur_arg[0]!='"') return -1;
+
+        if (isdigit(cur_arg[0]))
         {
-            args[arg_nr] = strtol(p_tmp,NULL,0);
+            args[arg_nr] = strtol(cur_arg,NULL,0);
+        }
+        else if (cur_arg[0]=='"')
+        {
+            cur_arg++;
+            args[arg_nr] = (long)(unsigned long)(void *)cur_arg;
+            
+            cur_arg = strchr(cur_arg, '"');
+            if (!cur_arg)
+                return -1;
+            *cur_arg = 0;
+            cur_arg++;
         }
         else
-        {
-            *p_tmp=0;
-            p_tmp++;
-            args[arg_nr] = (long)(unsigned long)(void *)p_tmp;
-            
-            p_tmp = strchr(p_tmp, '"');
-            if (p_tmp)
-                *p_tmp = 0;
-        }
+            return -1;
         
         arg_nr++;
-        p_tmp = strtok(NULL, ",");
-    }
+        p_tmp = strchr(cur_arg, ',');
+    } while (p_tmp && arg_nr<MAX_ARG_NUM);
 
-
+    return 0;
 }
 
 
 static int parse_func_call(char *buf, func_type *fun_addr, long *args)
 {
     char *func_name, *para_str_begin, *para_str_end;
-
+    int ret;
 
     func_name = buf;
     para_str_begin = strchr(buf, '(');
@@ -75,7 +88,6 @@ static int parse_func_call(char *buf, func_type *fun_addr, long *args)
         return -1;
     }
 
-
     para_str_end = strrchr(para_str_begin, ')');
     if (!para_str_end)
     {
@@ -84,12 +96,13 @@ static int parse_func_call(char *buf, func_type *fun_addr, long *args)
     }
     *para_str_end = 0;
 
+    ret = parse_function_args(args, para_str_begin, para_str_end);
+    if (ret)
+    {
+        printf("invalid function call syntax");
+    }
 
-
-
-    parse_function_args(args, para_str_begin);
-    
-    return 0;
+    return ret;
 }
 
 
@@ -148,6 +161,12 @@ static void assign_var(char *buf)
         return;
     }
 
+    if (!isdigit(para_str_begin[0]))
+    {
+        printf("invalid variable assign syntax");
+        return;
+    }
+
     *(uint64_t *)var_addr=strtol(para_str_begin,NULL,0);
     show_var_info(var_name);
 
@@ -161,7 +180,7 @@ static void exec_function(char *call_func_str)
     int ret = parse_func_call(call_func_str, &pfunc, args);
 
 
-    if (!ret);
+    if (!ret)
         do_call_func(pfunc, args);
 
 

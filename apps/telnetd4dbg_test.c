@@ -29,6 +29,7 @@ int my_func(long para1, char *para2, unsigned long para3)
 
 int main(int argc, char *argv[])
 {
+my_func(my_var, "haha", 1);
     telnetd4dbg_init(10000);
 
     while (1)
