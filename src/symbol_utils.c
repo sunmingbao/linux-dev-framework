@@ -315,26 +315,51 @@ static void assign_var(char *buf)
 {
     char *var_name, *para_str_begin;
     void *var_addr;
+    t_symbol *pt_symbol;
 
     var_name = buf;
     para_str_begin = strchr(buf, '=');
     *para_str_begin = 0;
     para_str_begin++;
     
-    var_addr = name2addr(var_name);
-    if (!var_addr)
+    pt_symbol = name2symbol(var_name);
+    if (!pt_symbol)
     {
         printf("unknown var %s", var_name);
         return;
     }
 
-    if (!isdigit(para_str_begin[0]))
+    if (!isdigit(para_str_begin[0]) 
+        && para_str_begin[0]!='+'
+        && para_str_begin[0]!='-')
     {
         printf("invalid variable assign syntax");
         return;
     }
 
-    *(uint64_t *)var_addr=strtol(para_str_begin,NULL,0);
+    var_addr = (void *)(pt_symbol->addr);
+    switch(pt_symbol->size)
+    {
+        case 1:
+        *(uint8_t *)var_addr=strtol(para_str_begin,NULL,0);
+        break;
+
+        case 2:
+        *(uint16_t *)var_addr=strtol(para_str_begin,NULL,0);
+        break;
+
+        case 4:
+        *(uint32_t *)var_addr=strtol(para_str_begin,NULL,0);
+        break;
+
+        case 8:
+        *(uint64_t *)var_addr=strtol(para_str_begin,NULL,0);
+        break;
+
+        default:
+            printf("variable size abnormal");
+            return;
+    }
     show_var_info(var_name);
 
 }
