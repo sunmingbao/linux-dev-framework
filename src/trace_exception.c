@@ -106,6 +106,7 @@ static void print_call_links(unsigned long *reg_bp, unsigned long reg_pc)
     
     while (reg_bp!=NULL)
     {
+    //DBG_PRINT("%p", reg_bp);
        if(!addr2symbol_info((void *)reg_pc, &dlinfo))
             break;
 
@@ -194,3 +195,8 @@ void trace_exception_init()
     sigaction(SIGILL, &action, NULL);
     sigaction(SIGABRT, &action, NULL);
 }
+
+
+
+
+

@@ -12,6 +12,5 @@
 #define  __TRACE_EXCEPTION_H__
 
 void trace_exception_init();
-
 #endif
 

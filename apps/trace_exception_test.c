@@ -9,29 +9,43 @@
  */
 
 #include <stdio.h>
+#include "debug.h"
 #include "trace_exception.h"
 
-int a;
-int *pa=(void *)0xfa;
-
-
-int gen_SIGSEGV()
+//下面的代码故意产生一个内存访问异常
+static int a;
+int __attribute__((noinline)) gen_SIGSEGV(int *bad_pointer)
 {
-    a = *pa;
-    return 5;
+    unsigned long *bp;
+
+    asm ("movl %%ebp, %0":"=qm"(bp));
+    DBG_PRINT("bp=%p", bp);
+
+    a = *bad_pointer;
+    return a;
 }
 
-int SIGSEGV_test()
+int __attribute__((noinline)) SIGSEGV_test(int para)
 {
-    int ret = 8;
+        unsigned long *bp;
 
-    return gen_SIGSEGV()+ret;
+    asm ("movl %%ebp, %0":"=qm"(bp));
+    DBG_PRINT("bp=%p", bp);
+
+    return gen_SIGSEGV(NULL)+para;
 }
 
-int main(int argc, char *argv[])
+int __attribute__((noinline)) main(int argc, char *argv[])
 {
+    unsigned long *bp;
+
+    asm ("movl %%ebp, %0":"=qm"(bp));
+    DBG_PRINT("bp=%p", bp);
+
     trace_exception_init();
-
-    return SIGSEGV_test();
+    SIGSEGV_test(555);
+    return 0;
 }
+
+
 
