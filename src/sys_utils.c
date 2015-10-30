@@ -27,7 +27,7 @@ int set_thread_cpu_range(pthread_t thread, int cpu_idx_begin, int cpu_idx_end)
     }
     
 
-   return pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
+   return pthread_setaffinity_np(thread, sizeof(set), &set);
 }
 
 int set_cur_thread_cpu_range(int cpu_idx_begin, int cpu_idx_end)

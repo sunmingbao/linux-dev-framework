@@ -16,10 +16,7 @@
 static int a;
 int __attribute__((noinline)) gen_SIGSEGV(int *bad_pointer)
 {
-    unsigned long *bp;
-
-    asm ("movl %%ebp, %0":"=qm"(bp));
-    DBG_PRINT("bp=%p", bp);
+    DBG_PRINT("==");
 
     a = *bad_pointer;
     return a;
@@ -27,20 +24,14 @@ int __attribute__((noinline)) gen_SIGSEGV(int *bad_pointer)
 
 int __attribute__((noinline)) SIGSEGV_test(int para)
 {
-        unsigned long *bp;
-
-    asm ("movl %%ebp, %0":"=qm"(bp));
-    DBG_PRINT("bp=%p", bp);
+    DBG_PRINT("==");
 
     return gen_SIGSEGV(NULL)+para;
 }
 
 int __attribute__((noinline)) main(int argc, char *argv[])
 {
-    unsigned long *bp;
-
-    asm ("movl %%ebp, %0":"=qm"(bp));
-    DBG_PRINT("bp=%p", bp);
+    DBG_PRINT("==");
 
     trace_exception_init();
     SIGSEGV_test(555);

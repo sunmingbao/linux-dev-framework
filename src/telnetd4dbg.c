@@ -180,9 +180,10 @@ int read_input(int is_password)
     int ret;
 
 READ_BYTE:
-    if (!fd_readable(0, 0, 50000))
+    if (!fd_readable(fd_pty_slave, 0, 50000))
             return 0;
-    ret=read_reliable(0, &c, 1);
+    ret=read_reliable(fd_pty_slave, &c, 1);
+    if (ret<0) return -1;
     if (ret!=1) goto READ_BYTE;
     if (c==0x00 || c==0x0a) goto READ_BYTE;
     if (c==0x08 && shell_buf_cur_len>0)
@@ -193,7 +194,8 @@ READ_BYTE:
 
     if (c==0x1b)
     {
-        read_certain_bytes(0, two_byes, 2);
+        ret=read_certain_bytes(fd_pty_slave, two_byes, 2);
+        if (ret<0) return -1;
         if (two_byes[0]==0x5b && two_byes[1]==0x41)
             history_cmd_roll_prev();
         else if (two_byes[0]==0x5b && two_byes[1]==0x42)
@@ -208,24 +210,25 @@ READ_BYTE:
     if (c!=' ' && !isgraph(c)) goto READ_BYTE;
 
         shell_buf[shell_buf_cur_len++]=c;
-        printf_to_fd(1, "%c", c);
+        if (is_password) c='*';
+        printf_to_fd(fd_pty_slave, "%c", c);
         goto READ_BYTE;
 
 
 EXIT:
-    printf_to_fd(1, "\n");
+    printf_to_fd(fd_pty_slave, "\n");
     shell_buf[shell_buf_cur_len] = 0;
     return 1;
 }
 
 void print_hint()
 {
-    printf_to_fd(1, DEBUG_SHELL_HINT, strlen(DEBUG_SHELL_HINT));
+    printf_to_fd(fd_pty_slave, DEBUG_SHELL_HINT, strlen(DEBUG_SHELL_HINT));
 }
 
 static void print_intro()
 {
-    printf_to_fd(1, "\n ****debug_shell started****\n"
+    printf_to_fd(fd_pty_slave, "\n ****debug_shell started****\n"
         "you can input var names to see var info\n"
         "you can input d(addrress, len) to see memory contents\n"
         "you can input xxx(1, 0x2, \"abc\") to execute function xxx\n"
@@ -233,6 +236,39 @@ static void print_intro()
 }
 
 static pthread_t the_shell_thread;
+int login_auth()
+{
+    char user_name[16]={0};
+    char password[16]={0};
+    int ret;
+
+    printf_to_fd(fd_pty_slave, "login:");
+READ_USER_NAME:
+    
+    ret=read_input(0);
+    if (ret<0) return -1;
+    if (ret!=1) goto READ_USER_NAME;
+    memcpy(user_name, shell_buf, 15);
+    shell_buf_cur_len = 0;
+
+    printf_to_fd(fd_pty_slave, "password:");
+READ_PASSWORD:
+    ret=read_input(1);
+    if (ret<0) return -1;
+    if (ret!=1) goto READ_PASSWORD;
+    memcpy(password, shell_buf, 15);
+    shell_buf_cur_len = 0;
+
+    if (strcmp(user_name, "admin")==0 &&
+        strcmp(user_name, "admin")==0)
+    {
+        printf_to_fd(fd_pty_slave, "login success\n");
+        return 0;
+    }
+
+          printf_to_fd(fd_pty_slave, "username or password wrong\n");
+        return 1;
+}
 static void *the_shell_thread_func(void *arg)
 {
     int ret;
@@ -241,11 +277,16 @@ static void *the_shell_thread_func(void *arg)
     shell_buf_cur_len=0;
 
     print_intro();
+
+    if (login_auth()) goto EXIT;
+    
+    redirect_io(fd_pty_slave);
     print_hint();
 
     while (!shell_thread_should_exit)
     {
         ret=read_input(0);
+        if (ret<0) goto EXIT;
         if (ret==1)
         {
             if (shell_buf_cur_len==0)
@@ -309,7 +350,6 @@ int make_new_session(int new_sock_fd)
     fd_pty_master = sv[0];
     fd_pty_slave  = sv[1];
 
-    redirect_io(fd_pty_slave);
     shell_thread_should_exit = 0;
     pthread_create(&the_shell_thread, NULL, the_shell_thread_func, NULL);
     return 0;
@@ -424,6 +464,8 @@ static void *misc_thread_func(void *arg)
 
     while (1)
     {
+        if (shell_quit_occurred)
+            term_session();
 
         FD_ZERO(&r_fds);
         FD_ZERO(&w_fds);
@@ -432,8 +474,7 @@ static void *misc_thread_func(void *arg)
         FD_SET(fd_server, &r_fds);
         max_fd=fd_server;
 
-        if (shell_quit_occurred)
-            term_session();
+
 
         if (fd_conn>0)
         {
@@ -446,12 +487,29 @@ static void *misc_thread_func(void *arg)
         }
 
         tv.tv_sec = 0;
-        tv.tv_usec = 20000;
+        tv.tv_usec = 200000;
 
         retval = select(max_fd + 1, &r_fds, &w_fds, &except_fds, &tv);
         if (retval <= 0)
         {
             continue;
+        }
+
+        if (FD_ISSET(fd_server, &r_fds))
+        {
+            tmp_fd=accept(fd_server, NULL, NULL);
+
+            if (tmp_fd<0)
+            {
+                continue;
+            }
+
+            if (make_new_session(tmp_fd))
+            {
+                close(tmp_fd);
+            }
+            continue;
+
         }
 
         if (FD_ISSET(fd_conn, &except_fds))
@@ -476,21 +534,6 @@ static void *misc_thread_func(void *arg)
         }
 
 
-        if (FD_ISSET(fd_server, &r_fds))
-        {
-            tmp_fd=accept(fd_server, NULL, NULL);
-
-            if (tmp_fd<0)
-            {
-                continue;
-            }
-
-            if (make_new_session(tmp_fd))
-            {
-                close(tmp_fd);
-                continue;
-            }
-        }
 
     }
 
