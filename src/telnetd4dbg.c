@@ -347,6 +347,7 @@ int make_new_session(int new_sock_fd)
     pty2sock_cache_len = 0;
 
     fd_conn = new_sock_fd;
+    set_fd_nonblock(fd_conn);
     fd_pty_master = sv[0];
     fd_pty_slave  = sv[1];
 
@@ -413,6 +414,7 @@ static int trans_data_pty2sock()
 {
     char buf[256];
     int ret;
+    static int send_fail_cnt;
 
     if (pty2sock_cache_len>0) goto DO_SEND_DATA;
 
@@ -441,6 +443,20 @@ DO_SEND_DATA:
         //printf_to_fd(ori_std_output, "%s", strerror(errno));
         return ret;
     }
+    if (ret==0)
+    {
+        send_fail_cnt++;
+        if (send_fail_cnt>=100)
+        {
+            send_fail_cnt = 0;
+            return -1;
+        }
+
+        return 0;
+
+    }
+
+    send_fail_cnt = 0;
     pty2sock_cache_len -= ret;
     cur_snd_ptr+=ret;
 

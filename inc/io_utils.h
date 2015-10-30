@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 int fd_readable(int fd, int sec, int usec);
+int set_fd_nonblock(int fd);
 int write_reliable(int fd, const void *buf, size_t count);
 int write_certain_bytes(int fd, const void *buf, size_t count);
 int read_reliable(int fd, void *buf, size_t count);

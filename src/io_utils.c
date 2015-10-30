@@ -9,6 +9,7 @@
  */
 
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/select.h>
@@ -39,6 +40,18 @@ int fd_readable(int fd, int sec, int usec)
     }
 
     return 0;
+}
+
+int set_fd_nonblock(int fd)
+{
+    int ret;
+    if((ret = fcntl(fd, F_GETFL,0))==-1)
+    {   
+        return ret;
+    }
+
+    ret |= O_NONBLOCK;
+    return fcntl(fd, F_SETFL, ret);
 }
 
 int write_reliable(int fd, const void *buf, size_t count)
