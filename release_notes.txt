@@ -1,5 +1,5 @@
 
-	linux-dev-framework v1.1.5
+	linux-dev-framework v1.1.6
 
 发布日期：2015-10-31
 

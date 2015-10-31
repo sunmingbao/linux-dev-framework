@@ -347,7 +347,7 @@ int make_new_session(int new_sock_fd)
     pty2sock_cache_len = 0;
 
     fd_conn = new_sock_fd;
-    set_fd_nonblock(fd_conn);
+    //set_fd_nonblock(fd_conn);
     fd_pty_master = sv[0];
     fd_pty_slave  = sv[1];
 
@@ -480,9 +480,6 @@ static void *misc_thread_func(void *arg)
 
     while (1)
     {
-        if (shell_quit_occurred)
-            term_session();
-
         FD_ZERO(&r_fds);
         FD_ZERO(&w_fds);
         FD_ZERO(&except_fds);
@@ -514,7 +511,6 @@ static void *misc_thread_func(void *arg)
         if (FD_ISSET(fd_server, &r_fds))
         {
             tmp_fd=accept(fd_server, NULL, NULL);
-
             if (tmp_fd<0)
             {
                 continue;
@@ -528,7 +524,7 @@ static void *misc_thread_func(void *arg)
 
         }
 
-        if (FD_ISSET(fd_conn, &except_fds))
+        if (shell_quit_occurred || FD_ISSET(fd_conn, &except_fds))
         {
             term_session();
             continue;
