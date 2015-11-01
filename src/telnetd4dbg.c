@@ -26,6 +26,9 @@ static uint16_t server_port;
 static pthread_t misc_thread;
 static int ori_std_input, ori_std_output, ori_std_err;
 static int fd_server, fd_conn, fd_pty_master, fd_pty_slave;
+static char pty2sock_cache[512], *cur_snd_ptr;
+static int pty2sock_cache_len;
+
 static void save_ori_io()
 {
     ori_std_input =dup(0);
@@ -65,6 +68,7 @@ void term_session()
     fd_pty_slave=0;
     fd_pty_master=0;
     shell_quit_occurred = 0;
+    pty2sock_cache_len = 0;
 }
 
 void snd_iac(int sockfd, char cmd, char opt)
@@ -314,8 +318,6 @@ EXIT:
     return NULL;
 }
 
-static char pty2sock_cache[512], *cur_snd_ptr;
-static int pty2sock_cache_len;
 
 int make_new_session(int new_sock_fd)
 {
@@ -342,12 +344,8 @@ int make_new_session(int new_sock_fd)
         return ret;
     }
 
-    term_session();
-
-    pty2sock_cache_len = 0;
-
     fd_conn = new_sock_fd;
-    //set_fd_nonblock(fd_conn);
+    set_fd_nonblock(fd_conn);
     fd_pty_master = sv[0];
     fd_pty_slave  = sv[1];
 
@@ -414,7 +412,6 @@ static int trans_data_pty2sock()
 {
     char buf[256];
     int ret;
-    static int send_fail_cnt;
 
     if (pty2sock_cache_len>0) goto DO_SEND_DATA;
 
@@ -436,6 +433,10 @@ static int trans_data_pty2sock()
     if (ret==0) return 0;
 
 DO_SEND_DATA:
+    if (!fd_writeable(fd_conn, 0, 0))
+    {
+        return 0;
+    }
     ret=write_reliable(fd_conn, pty2sock_cache, pty2sock_cache_len);
     //printf_to_fd(ori_std_output, "write ret=%d\n", ret);
     if (ret<0)
@@ -445,18 +446,9 @@ DO_SEND_DATA:
     }
     if (ret==0)
     {
-        send_fail_cnt++;
-        if (send_fail_cnt>=100)
-        {
-            send_fail_cnt = 0;
-            return -1;
-        }
-
-        return 0;
-
+        return -1;
     }
 
-    send_fail_cnt = 0;
     pty2sock_cache_len -= ret;
     cur_snd_ptr+=ret;
 
@@ -515,6 +507,13 @@ static void *misc_thread_func(void *arg)
             {
                 continue;
             }
+
+            if (fd_conn>0)
+            {
+                printf_to_fd(fd_conn, "A new login happens, so we shutdown your session...\r\n");
+            }
+            
+            term_session();
 
             if (make_new_session(tmp_fd))
             {

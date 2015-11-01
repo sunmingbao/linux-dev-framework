@@ -16,30 +16,45 @@
 #include <stdarg.h>
 #include <errno.h>
 #include "debug.h"
-int fd_readable(int fd, int sec, int usec)
+
+int fd_read_or_write_able(int fd, int sec, int usec, int test_read)
 {
-    fd_set rfds;
+    fd_set fds;
     struct timeval tv;
     int retval;
 
-    FD_ZERO(&rfds);
-    FD_SET(fd, &rfds);
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
 
     tv.tv_sec = sec;
     tv.tv_usec = usec;
 
-    retval = select(fd + 1, &rfds, NULL, NULL, &tv);
+    if (test_read)
+        retval = select(fd + 1, &fds, NULL, NULL, &tv);
+    else
+        retval = select(fd + 1, NULL, &fds, NULL, &tv);
+
     if (retval == -1)
     {
-       perror("select()");
        return 1;
     }
+    
     if (retval)
     {
         return 1;
     }
 
     return 0;
+}
+
+int fd_readable(int fd, int sec, int usec)
+{
+    return fd_read_or_write_able(d, sec, usec, 1);
+}
+
+int fd_writeable(int fd, int sec, int usec)
+{
+    return fd_read_or_write_able(d, sec, usec, 0);
 }
 
 int set_fd_nonblock(int fd)
