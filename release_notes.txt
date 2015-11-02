@@ -1,7 +1,7 @@
 
-	linux-dev-framework v1.1.6
+	linux-dev-framework v1.1.7
 
-发布日期：2015-11-01
+发布日期：2015-11-02
 
 更新内容：
 代码完善

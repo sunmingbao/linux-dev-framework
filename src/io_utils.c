@@ -49,12 +49,12 @@ int fd_read_or_write_able(int fd, int sec, int usec, int test_read)
 
 int fd_readable(int fd, int sec, int usec)
 {
-    return fd_read_or_write_able(d, sec, usec, 1);
+    return fd_read_or_write_able(fd, sec, usec, 1);
 }
 
 int fd_writeable(int fd, int sec, int usec)
 {
-    return fd_read_or_write_able(d, sec, usec, 0);
+    return fd_read_or_write_able(fd, sec, usec, 0);
 }
 
 int set_fd_nonblock(int fd)
