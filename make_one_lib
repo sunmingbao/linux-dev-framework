@@ -1,0 +1,67 @@
+# 
+# 本软件为免费、开源软件。
+# 本软件的版权(包括源码及二进制发布版本)归一切公众所有。
+# 您可以自由使用、传播本软件。
+# 您也可以以任何形式、任何目的使用本软件(包括源码及二进制发布版本)，而不受任何版权限制。
+# =====================
+# 作者: 孙明保
+# 邮箱: sunmingbao@126.com
+# 
+
+
+TARGET_PATH=$(lib_target_root)
+LIB_FILE_STATIC=$(addprefix $(lib_target_root)/lib, $(addsuffix .a, $(LIB_NAME)))
+LIB_FILE_DYNAMIC=$(addprefix $(lib_target_root)/lib, $(addsuffix .so, $(LIB_NAME)))
+
+OBJ_PATH=$(TARGET_PATH)/$(LIB_NAME)_tmp
+DEP_PATH=$(OBJ_PATH)
+__dummy:=$(shell $(MKDIR) $(OBJ_PATH))
+
+SRC_PATH=$(lib_root)/$(LIB_NAME)/src
+INC_DIRS+=-I$(lib_root)/$(LIB_NAME)/api \
+          -I$(lib_root)/$(LIB_NAME)/inc \
+          -I$(lib_root)/$(LIB_NAME)/src
+
+SRC_FILES=$(wildcard $(SRC_PATH)/*.c)
+SRC_FILES_BASE_NAMES=$(basename $(notdir $(SRC_FILES)))
+OBJ_FILES=$(addprefix $(OBJ_PATH)/, $(addsuffix .o, $(SRC_FILES_BASE_NAMES)))
+SOBJ_FILES=$(addprefix $(OBJ_PATH)/, $(addsuffix .sobj, $(SRC_FILES_BASE_NAMES)))
+DEP_FILES=$(addprefix $(DEP_PATH)/, $(addsuffix .d, $(SRC_FILES_BASE_NAMES)))
+
+#all: $(LIB_FILE_STATIC) $(LIB_FILE_DYNAMIC)
+all: $(LIB_FILE_STATIC)
+
+
+.PHONY:all
+
+$(LIB_FILE_STATIC): $(OBJ_FILES)
+	@echo -n Making $@ ...
+	@$(AR) -rcs $@ $^
+	@echo done!
+
+$(LIB_FILE_DYNAMIC): $(SOBJ_FILES)
+	@echo -n Making $@ ...
+	@$(CC) -shared -o $@ $^
+	@echo done!
+
+$(OBJ_PATH)/%.o: $(SRC_PATH)/%.c $(DEP_PATH)/%.d
+	@echo -n Making $@ ...
+	@$(CC) -c $(CFLAGS) $(INC_DIRS) $< -o $@ 
+	@echo done!
+
+$(OBJ_PATH)/%.sobj: $(SRC_PATH)/%.c $(DEP_PATH)/%.d
+	@echo -n Making $@ ...
+	@$(CC) -c -fPIC  $(CFLAGS) $(INC_DIRS) $< -o $@ 
+	@echo done!
+
+$(DEP_PATH)/%.d: $(SRC_PATH)/%.c
+#	$(CC) -MM  $(CFLAGS) $(INC_DIRS) $< | \
+#        sed "s/$*\.o[ :]*/$(subst /,\/, $(OBJ_PATH))\/$*.o  $(subst /,\/, $(DEP_PATH))\/$*.d : /g"> $@
+	@echo -n Making $@ ...
+	@$(CC) -MM  $(CFLAGS) $(INC_DIRS) $< | \
+        sed "s|$*\.o[ :]*|$(DEP_PATH)/$*.d : |g"> $@
+	@echo done!
+
+
+-include $(DEP_FILES)
+
