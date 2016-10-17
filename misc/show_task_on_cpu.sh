@@ -1,6 +1,9 @@
 #!/bin/sh
 cpu_idx=0
-if [ $# -gt 0 ]; then
+if [ $# -lt 1 ]; then
+    echo  "Usage: $0 cpu_idx"
+    exit
+else
     cpu_idx=$1
 fi
 
