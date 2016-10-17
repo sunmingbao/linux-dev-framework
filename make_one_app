@@ -25,7 +25,8 @@ SRC_FILES_BASE_NAMES=$(basename $(notdir $(SRC_FILES)))
 OBJ_FILES=$(addprefix $(OBJ_PATH)/, $(addsuffix .o, $(SRC_FILES_BASE_NAMES)))
 DEP_FILES=$(addprefix $(DEP_PATH)/, $(addsuffix .d, $(SRC_FILES_BASE_NAMES)))
 
-INC_DIRS+=$(INC_ALL_LIB_STR) \
+#you can change CFLAGS/INC_DIRS/LDFLAGS/LIBS  according to app name
+INC_DIRS+=$(INC_ALL_PRJ_LIB_HDR_DIR) \
           -I$(SRC_PATH)
 
 all: $(EXE_FILE)
@@ -37,7 +38,7 @@ all: $(EXE_FILE)
 
 $(EXE_FILE): $(OBJ_FILES)  $(lib_file_list)
 	@echo -n Making $@ ...
-	@$(CC)  $(LDFLAGS) -o $@  $(OBJ_FILES)  $(LINK_ALL_LIB_STR)  $(C_LIBS)
+	@$(CC)  $(LDFLAGS) -o $@  $(OBJ_FILES)  $(LIBS)
 	@echo done!
 
 $(OBJ_PATH)/%.o: $(SRC_PATH)/%.c $(DEP_PATH)/%.d

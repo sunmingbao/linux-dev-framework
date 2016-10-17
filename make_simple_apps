@@ -22,7 +22,7 @@ DEP_FILES=$(addprefix $(DEP_PATH)/, $(addsuffix .d, $(SRC_FILES_BASE_NAMES)))
 
 EXE_FILES=$(addprefix $(TARGET_PATH)/, $(addsuffix .exe, $(SRC_FILES_BASE_NAMES)))
 
-INC_DIRS+=$(INC_ALL_LIB_STR)
+INC_DIRS+=$(INC_ALL_PRJ_LIB_HDR_DIR)
 
 all:$(EXE_FILES)
 
@@ -32,7 +32,7 @@ all:$(EXE_FILES)
 
 $(TARGET_PATH)/%.exe: $(OBJ_PATH)/%.o  $(lib_file_list)
 	@echo -n Making $@ ...
-	@$(CC)  $(LDFLAGS) -o $@  $<  $(LINK_ALL_LIB_STR)  $(C_LIBS)
+	@$(CC)  $(LDFLAGS) -o $@  $<   $(LIBS)
 	@echo done!
 
 $(OBJ_PATH)/%.o: $(SRC_PATH)/%.c $(DEP_PATH)/%.d

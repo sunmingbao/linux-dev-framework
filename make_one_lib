@@ -18,15 +18,18 @@ DEP_PATH=$(OBJ_PATH)
 __dummy:=$(shell $(MKDIR) $(OBJ_PATH))
 
 SRC_PATH=$(lib_root)/$(LIB_NAME)/src
-INC_DIRS+=-I$(lib_root)/$(LIB_NAME)/api \
-          -I$(lib_root)/$(LIB_NAME)/inc \
-          -I$(lib_root)/$(LIB_NAME)/src
+
 
 SRC_FILES=$(wildcard $(SRC_PATH)/*.c)
 SRC_FILES_BASE_NAMES=$(basename $(notdir $(SRC_FILES)))
 OBJ_FILES=$(addprefix $(OBJ_PATH)/, $(addsuffix .o, $(SRC_FILES_BASE_NAMES)))
 SOBJ_FILES=$(addprefix $(OBJ_PATH)/, $(addsuffix .sobj, $(SRC_FILES_BASE_NAMES)))
 DEP_FILES=$(addprefix $(DEP_PATH)/, $(addsuffix .d, $(SRC_FILES_BASE_NAMES)))
+
+#you can change CFLAGS/INC_DIRS  according to lib name
+INC_DIRS+=-I$(lib_root)/$(LIB_NAME)/api \
+          -I$(lib_root)/$(LIB_NAME)/inc \
+          -I$(lib_root)/$(LIB_NAME)/src
 
 #all: $(LIB_FILE_STATIC) $(LIB_FILE_DYNAMIC)
 all: $(LIB_FILE_STATIC)

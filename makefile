@@ -13,19 +13,11 @@
 CROSS_COMPILE?=
 COMPILE_TYPE?=release
 
-
+#generate toolchain and command strings
 export CC:=$(CROSS_COMPILE)gcc
-ifeq ($(COMPILE_TYPE),debug)
-    export CFLAGS:=-g -D_DEBUG
-else
-    export CFLAGS:=-O2 -Wall -fno-strict-overflow -fno-strict-aliasing -fno-omit-frame-pointer
-endif
-
-
 export LD:=$(CROSS_COMPILE)ld
 export AR:=$(CROSS_COMPILE)ar
 export RANLIB:=$(CROSS_COMPILE)ranlib
-
 export RM:=rm -rf
 export MKDIR:=mkdir -p
 
@@ -47,22 +39,37 @@ __dummy:=$(shell  $(MKDIR) $(apps_target_root))
 __dummy:=$(shell  $(MKDIR) $(simple_apps_target_root))
 
 
-#generate -IXXX strings and -lXXX strings
+#generate lib name and lib file list
 export lib_list:=$(shell  ls $(lib_root))
-export INC_ALL_LIB_STR:=$(addprefix -I$(lib_root)/, $(addsuffix /api, $(lib_list)))
-export LINK_ALL_LIB_STR:=-L$(lib_target_root) -Wl,--whole-archive $(addprefix -l, $(lib_list)) -Wl,--no-whole-archive
-
-
-#generate lib file list
 export lib_file_list:=$(addprefix $(lib_target_root)/lib, $(addsuffix .a, $(lib_list)))
 export lib_file_dynamic_list:=$(addprefix $(lib_target_root)/lib, $(addsuffix .so, $(lib_list)))
 
-#generate apps data
+#generate apps list
 export app_list:=$(shell ls $(app_root))
 
-export LDFLAGS:=-rdynamic
-export C_LIBS:=-ldl -lpthread -lrt -lutil
+#generate compile/link flags, -Ixxxs, -lxxxs
+#submakefile can change CFLAGS/INC_DIRS/LDFLAGS/LIBS according to lib/app name
+COMMON_CFLAGS:=-Wall -fno-strict-overflow -fno-strict-aliasing -fno-omit-frame-pointer -pthread
+ifeq ($(COMPILE_TYPE),debug)
+    COMMON_CFLAGS+=-g -D_DEBUG
+else
+    COMMON_CFLAGS+=-O2
+endif
+
+export COMMON_CFLAGS
+export COMMON_LDFLAGS:=-rdynamic
+export COMMON_C_LIBS:=-ldl -pthread -lrt -lutil
+
+export INC_ALL_PRJ_LIB_HDR_DIR:=$(addprefix -I$(lib_root)/, $(addsuffix /api, $(lib_list)))
+export LINK_ALL_PRJ_LIB:=-L$(lib_target_root) -Wl,--whole-archive $(addprefix -l, $(lib_list)) -Wl,--no-whole-archive
+
+
+export CFLAGS:=$(COMMON_CFLAGS)
 export INC_DIRS := -I. 
+export LDFLAGS:=$(COMMON_LDFLAGS)
+export LIBS:=$(COMMON_C_LIBS) $(LINK_ALL_PRJ_LIB)
+
+#finally targets list
 .PHONY:default  clean
 
 default:
