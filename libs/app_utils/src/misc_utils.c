@@ -101,7 +101,7 @@ int get_self_dir(char *buf, int buf_len)
     }
 
     strcpy(buf, self_path);
-printf("\"%s\"", buf);
+//printf("\"%s\"", buf);
     return path_len; 
 
  

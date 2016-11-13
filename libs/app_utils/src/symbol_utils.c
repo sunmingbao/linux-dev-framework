@@ -194,7 +194,7 @@ int __attribute__((constructor, used)) init_symbol()
 #define   MAX_ARG_NUM    (8)
 
 
-typedef  void (*func_type)(long para1, ...);
+typedef  int64_t (*func_type)(long para1, ...);
 
 static int parse_function_args(long *args, char *para_str_begin, char *para_str_end)
 
@@ -210,9 +210,9 @@ static int parse_function_args(long *args, char *para_str_begin, char *para_str_
     {
         cur_arg = p_tmp+1;
         if (cur_arg==para_str_end) return -1;
-        if (!isdigit(cur_arg[0]) && cur_arg[0]!='"') return -1;
+        if (!isdigit(cur_arg[0]) && cur_arg[0]!='-' && cur_arg[0]!='"') return -1;
 
-        if (isdigit(cur_arg[0]))
+        if (isdigit(cur_arg[0]) || '-'==cur_arg[0])
         {
             args[arg_nr] = strtol(cur_arg,NULL,0);
         }
@@ -255,6 +255,13 @@ static int parse_func_call(char *buf, func_type *fun_addr, long *args)
         return -1;
     }
 
+	if (strcmp(func_name,"exit")==0 ||
+	    strcmp(func_name,"abort")==0)
+	{
+		printf("wanna to exit the debug shell? please input quit\n");
+		return -1;
+	}
+
     para_str_end = strrchr(para_str_begin, ')');
     if (!para_str_end)
     {
@@ -275,7 +282,7 @@ static int parse_func_call(char *buf, func_type *fun_addr, long *args)
 
 static void do_call_func(func_type pfunc, long *args)
 {
-    pfunc(args[0]
+    int64_t ret = pfunc(args[0]
         ,args[1]
         ,args[2]
         ,args[3]
@@ -283,18 +290,37 @@ static void do_call_func(func_type pfunc, long *args)
         ,args[5]
         ,args[6]
         ,args[7]);
+
+
+printf("\n[return value] :(ignore it if no return value)\n"
+	"1 byte :0x%-16"PRIx8  " (%"PRIi8")\n"
+	"2 bytes:0x%-16"PRIx16 " (%"PRIi16")\n"
+	"4 bytes:0x%-16"PRIx32 " (%"PRIi32")\n"
+	"8 bytes:0x%-16"PRIx64 " (%"PRIi64")\n"
+	
+	, (uint8_t )ret, (int8_t )ret
+	, (uint16_t )ret, (int16_t )ret
+	, (uint32_t )ret, (int32_t )ret
+	, (uint64_t )ret, (int64_t )ret);
+
+
 }
 
 
 static void show_var_info(const char *var_name)
 {
-    void *var_addr = name2addr(var_name);
-    if (!var_addr)
+    t_symbol *pt_symbol = name2symbol(var_name);
+    void *var_addr;
+	
+    if (!pt_symbol)
     {
-        printf("unknown symbol %s", var_name);
+        printf("unknown var %s", var_name);
         return;
     }
 
+	var_addr = (void *)(pt_symbol->addr);
+
+#if 0
     printf("[var address] : %p\n\n"
         "[values] :\n"
         "1 byte :0x%-16"PRIx8  " (%"PRIi8")\n"
@@ -308,6 +334,43 @@ static void show_var_info(const char *var_name)
         , *(uint16_t *)var_addr, *(int16_t *)var_addr
         , *(uint32_t *)var_addr, *(int32_t *)var_addr
         , *(uint64_t *)var_addr, *(int64_t *)var_addr);
+#endif
+
+    printf("[var address] : %p\n"
+           "[size] : %lu\n"
+           "[value] :"
+        
+        , var_addr
+        
+        , pt_symbol->size);
+
+	switch(pt_symbol->size)
+	{
+		case 1:
+		printf("0x%"PRIx8  " (%"PRIi8")\n"
+				 , *(uint8_t *)var_addr, *(int8_t *)var_addr);
+		break;
+
+		case 2:
+			printf("0x%"PRIx16 " (%"PRIi16")\n"
+					 , *(uint16_t *)var_addr, *(int16_t *)var_addr);
+			break;
+
+		case 4:
+			printf("0x%"PRIx32 " (%"PRIi32")\n"
+					 , *(uint32_t *)var_addr, *(int32_t *)var_addr);
+			break;
+
+		case 8:
+			printf("0x%"PRIx64 " (%"PRIi64")\n"
+					 , *(uint64_t *)var_addr, *(int64_t *)var_addr);
+			break;
+
+		default:
+			printf("variable size abnormal");
+			return;
+	}
+
 
 }
 

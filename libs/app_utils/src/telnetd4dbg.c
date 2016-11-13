@@ -131,18 +131,36 @@ void update_histotry_cmds(char *cmd)
 
 }
 
+static __thread  int is_password, is_login;
+
 static void refresh_shell_buf_display()
 {
-    printf_to_fd(1, "\r%s", DEBUG_SHELL_HINT);
-    write_certain_bytes(1, shell_buf, shell_buf_cur_len);
+	if (!is_login)
+        printf_to_fd(fd_pty_slave, "\r%s", DEBUG_SHELL_HINT);
+	else if (!is_password)
+		printf_to_fd(fd_pty_slave, "\r%s", "login:");
+	else
+		printf_to_fd(fd_pty_slave, "\r%s", "password:");
+
+    if (!is_password)
+        write_certain_bytes(fd_pty_slave, shell_buf, shell_buf_cur_len);
+	else
+		write_certain_bytes(fd_pty_slave, "********************************", shell_buf_cur_len);
 }
 
 static void back_input(int nr_back_step)
 {
     int i;
-    printf_to_fd(1, "\r%s", DEBUG_SHELL_HINT);
+
+	if (!is_login)
+        printf_to_fd(fd_pty_slave, "\r%s", DEBUG_SHELL_HINT);
+	else if (!is_password)
+		printf_to_fd(fd_pty_slave, "\r%s", "login:");
+	else
+		printf_to_fd(fd_pty_slave, "\r%s", "password:");
+	
     for (i=0;i<shell_buf_cur_len;i++)
-        printf_to_fd(1, " ");
+        printf_to_fd(fd_pty_slave, " ");
 
     shell_buf_cur_len -= nr_back_step;
     refresh_shell_buf_display();
@@ -178,7 +196,8 @@ void history_cmd_roll_next()
     }
 }
 
-int read_input(int is_password)
+
+int read_input()
 {
     char c, two_byes[2];
     int ret;
@@ -189,8 +208,9 @@ READ_BYTE:
     ret=read_reliable(fd_pty_slave, &c, 1);
     if (ret<0) return -1;
     if (ret!=1) goto READ_BYTE;
+	//printf_to_fd(ori_std_output, "%02hhx", c);
     if (c==0x00 || c==0x0a) goto READ_BYTE;
-    if (c==0x08 && shell_buf_cur_len>0)
+    if ((c==0x08 || c==0x7f)  && shell_buf_cur_len>0)
     {
         back_input(1);
         goto READ_BYTE;
@@ -245,11 +265,13 @@ int login_auth()
     char user_name[16]={0};
     char password[16]={0};
     int ret;
-
+	is_login = 1;
+BEGIN:
+	is_password=0;
     printf_to_fd(fd_pty_slave, "login:");
 READ_USER_NAME:
-    
-    ret=read_input(0);
+
+    ret=read_input();
     if (ret<0) return -1;
     if (ret!=1) goto READ_USER_NAME;
     memcpy(user_name, shell_buf, 15);
@@ -257,7 +279,8 @@ READ_USER_NAME:
 
     printf_to_fd(fd_pty_slave, "password:");
 READ_PASSWORD:
-    ret=read_input(1);
+	is_password=1;
+    ret=read_input();
     if (ret<0) return -1;
     if (ret!=1) goto READ_PASSWORD;
     memcpy(password, shell_buf, 15);
@@ -271,7 +294,7 @@ READ_PASSWORD:
     }
 
           printf_to_fd(fd_pty_slave, "username or password wrong\n");
-        return 1;
+        goto BEGIN;
 }
 static void *the_shell_thread_func(void *arg)
 {
@@ -283,7 +306,10 @@ static void *the_shell_thread_func(void *arg)
     print_intro();
 
     if (login_auth()) goto EXIT;
-    
+
+	is_password = 0;
+	is_login = 0;
+	
     redirect_io(fd_pty_slave);
     print_hint();
 
