@@ -1,35 +1,35 @@
-//´úÂëÕª×ÔgccÔ´Âë
+/*
+ * scratch from source code of gcc-4.8.2
+ */
+
 
 #include <stdio.h>
 #include "cpuid.h"
 
 enum processor_type
 {
-  PROCESSOR_GENERIC = 0,
-  PROCESSOR_I386,			/* 80386 */
+  PROCESSOR_I386 = 0,			/* 80386 */
   PROCESSOR_I486,			/* 80486DX, 80486SX, 80486DX[24] */
   PROCESSOR_PENTIUM,
   PROCESSOR_PENTIUMPRO,
-  PROCESSOR_PENTIUM4,
-  PROCESSOR_NOCONA,
-  PROCESSOR_CORE2,
-  PROCESSOR_NEHALEM,
-  PROCESSOR_SANDYBRIDGE,
-  PROCESSOR_HASWELL,
-  PROCESSOR_BONNELL,
-  PROCESSOR_SILVERMONT,
-  PROCESSOR_INTEL,
   PROCESSOR_GEODE,
   PROCESSOR_K6,
   PROCESSOR_ATHLON,
+  PROCESSOR_PENTIUM4,
   PROCESSOR_K8,
+  PROCESSOR_NOCONA,
+  PROCESSOR_CORE2,
+  PROCESSOR_COREI7,
+  PROCESSOR_HASWELL,
+  PROCESSOR_GENERIC32,
+  PROCESSOR_GENERIC64,
   PROCESSOR_AMDFAM10,
   PROCESSOR_BDVER1,
   PROCESSOR_BDVER2,
   PROCESSOR_BDVER3,
-  PROCESSOR_BDVER4,
   PROCESSOR_BTVER1,
   PROCESSOR_BTVER2,
+  PROCESSOR_ATOM,
   PROCESSOR_max
 };
 
@@ -82,8 +82,6 @@ const char *host_detect_local_cpu()
   unsigned int has_rdrnd = 0, has_f16c = 0, has_fsgsbase = 0;
   unsigned int has_rdseed = 0, has_prfchw = 0, has_adx = 0;
   unsigned int has_osxsave = 0, has_fxsr = 0, has_xsave = 0, has_xsaveopt = 0;
-  unsigned int has_avx512er = 0, has_avx512pf = 0, has_avx512cd = 0;
-  unsigned int has_avx512f = 0, has_sha = 0, has_prefetchwt1 = 0;
 
   int arch=1;
 
@@ -91,29 +89,29 @@ const char *host_detect_local_cpu()
 
 
 
+
   max_level = __get_cpuid_max (0, &vendor);
   if (max_level < 1)
-    goto done;
+	goto done;
 
   __cpuid (1, eax, ebx, ecx, edx);
 
   model = (eax >> 4) & 0x0f;
   family = (eax >> 8) & 0x0f;
-  if (vendor == signature_INTEL_ebx
-      || vendor == signature_AMD_ebx)
-    {
-      unsigned int extended_model, extended_family;
+  if (vendor == signature_INTEL_ebx)
+	{
+	  unsigned int extended_model, extended_family;
 
-      extended_model = (eax >> 12) & 0xf0;
-      extended_family = (eax >> 20) & 0xff;
-      if (family == 0x0f)
+	  extended_model = (eax >> 12) & 0xf0;
+	  extended_family = (eax >> 20) & 0xff;
+	  if (family == 0x0f)
 	{
 	  family += extended_family;
 	  model += extended_model;
 	}
-      else if (family == 0x06)
+	  else if (family == 0x06)
 	model += extended_model;
-    }
+	}
 
   has_sse3 = ecx & bit_SSE3;
   has_ssse3 = ecx & bit_SSSE3;
@@ -139,54 +137,25 @@ const char *host_detect_local_cpu()
   has_sse2 = edx & bit_SSE2;
 
   if (max_level >= 7)
-    {
-      __cpuid_count (7, 0, eax, ebx, ecx, edx);
+	{
+	  __cpuid_count (7, 0, eax, ebx, ecx, edx);
 
-      has_bmi = ebx & bit_BMI;
-      has_hle = ebx & bit_HLE;
-      has_rtm = ebx & bit_RTM;
-      has_avx2 = ebx & bit_AVX2;
-      has_bmi2 = ebx & bit_BMI2;
-      has_fsgsbase = ebx & bit_FSGSBASE;
-      has_rdseed = ebx & bit_RDSEED;
-      has_adx = ebx & bit_ADX;
-      has_avx512f = ebx & bit_AVX512F;
-      has_avx512er = ebx & bit_AVX512ER;
-      has_avx512pf = ebx & bit_AVX512PF;
-      has_avx512cd = ebx & bit_AVX512CD;
-      has_sha = ebx & bit_SHA;
-
-      has_prefetchwt1 = ecx & bit_PREFETCHWT1;
-    }
+	  has_bmi = ebx & bit_BMI;
+	  has_hle = ebx & bit_HLE;
+	  has_rtm = ebx & bit_RTM;
+	  has_avx2 = ebx & bit_AVX2;
+	  has_bmi2 = ebx & bit_BMI2;
+	  has_fsgsbase = ebx & bit_FSGSBASE;
+	  has_rdseed = ebx & bit_RDSEED;
+	  has_adx = ebx & bit_ADX;
+	}
 
   if (max_level >= 13)
-    {
-      __cpuid_count (13, 1, eax, ebx, ecx, edx);
+	{
+	  __cpuid_count (13, 1, eax, ebx, ecx, edx);
 
-      has_xsaveopt = eax & bit_XSAVEOPT;
-    }
-
-  /* Check cpuid level of extended features.  */
-  __cpuid (0x80000000, ext_level, ebx, ecx, edx);
-
-  if (ext_level > 0x80000000)
-    {
-      __cpuid (0x80000001, eax, ebx, ecx, edx);
-
-      has_lahf_lm = ecx & bit_LAHF_LM;
-      has_sse4a = ecx & bit_SSE4a;
-      has_abm = ecx & bit_ABM;
-      has_lwp = ecx & bit_LWP;
-      has_fma4 = ecx & bit_FMA4;
-      has_xop = ecx & bit_XOP;
-      has_tbm = ecx & bit_TBM;
-      has_lzcnt = ecx & bit_LZCNT;
-      has_prfchw = ecx & bit_PRFCHW;
-
-      has_longmode = edx & bit_LM;
-      has_3dnowp = edx & bit_3DNOWP;
-      has_3dnow = edx & bit_3DNOW;
-    }
+	  has_xsaveopt = eax & bit_XSAVEOPT;
+	}
 
   /* Get XCR_XFEATURE_ENABLED_MASK register with xgetbv.  */
 #define XCR_XFEATURE_ENABLED_MASK	0x0
@@ -194,89 +163,114 @@ const char *host_detect_local_cpu()
 #define XSTATE_SSE			0x2
 #define XSTATE_YMM			0x4
   if (has_osxsave)
-    asm (".byte 0x0f; .byte 0x01; .byte 0xd0"
+	asm (".byte 0x0f; .byte 0x01; .byte 0xd0"
 	 : "=a" (eax), "=d" (edx)
 	 : "c" (XCR_XFEATURE_ENABLED_MASK));
 
   /* Check if SSE and YMM states are supported.  */
   if (!has_osxsave
-      || (eax & (XSTATE_SSE | XSTATE_YMM)) != (XSTATE_SSE | XSTATE_YMM))
-    {
-      has_avx = 0;
-      has_avx2 = 0;
-      has_fma = 0;
-      has_fma4 = 0;
-      has_f16c = 0;
-      has_xop = 0;
-      has_xsave = 0;
-      has_xsaveopt = 0;
-    }
+	  || (eax & (XSTATE_SSE | XSTATE_YMM)) != (XSTATE_SSE | XSTATE_YMM))
+	{
+	  has_avx = 0;
+	  has_avx2 = 0;
+	  has_fma = 0;
+	  has_fma4 = 0;
+	  has_xop = 0;
+	  has_xsave = 0;
+	  has_xsaveopt = 0;
+	}
 
-    
+  /* Check cpuid level of extended features.  */
+  __cpuid (0x80000000, ext_level, ebx, ecx, edx);
+
+  if (ext_level > 0x80000000)
+	{
+	  __cpuid (0x80000001, eax, ebx, ecx, edx);
+
+	  has_lahf_lm = ecx & bit_LAHF_LM;
+	  has_sse4a = ecx & bit_SSE4a;
+	  has_abm = ecx & bit_ABM;
+	  has_lwp = ecx & bit_LWP;
+	  has_fma4 = ecx & bit_FMA4;
+	  has_xop = ecx & bit_XOP;
+	  has_tbm = ecx & bit_TBM;
+	  has_lzcnt = ecx & bit_LZCNT;
+	  has_prfchw = ecx & bit_PRFCHW;
+
+	  has_longmode = edx & bit_LM;
+	  has_3dnowp = edx & bit_3DNOWP;
+	  has_3dnow = edx & bit_3DNOW;
+	}
+
+	
 
   if (vendor == signature_AMD_ebx)
-    {
-      unsigned int name;
+	{
+	  unsigned int name;
 
-      /* Detect geode processor by its processor signature.  */
-      if (ext_level > 0x80000001)
+	  /* Detect geode processor by its processor signature.  */
+	  if (ext_level > 0x80000001)
 	__cpuid (0x80000002, name, ebx, ecx, edx);
-      else
+	  else
 	name = 0;
 
-      if (name == signature_NSC_ebx)
+	  if (name == signature_NSC_ebx)
 	processor = PROCESSOR_GEODE;
-      else if (has_movbe && family == 22)
+	  else if (has_movbe)
 	processor = PROCESSOR_BTVER2;
-      else if (has_avx2)
-        processor = PROCESSOR_BDVER4;
-      else if (has_xsaveopt)
-        processor = PROCESSOR_BDVER3;
-      else if (has_bmi)
-        processor = PROCESSOR_BDVER2;
-      else if (has_xop)
+	  else if (has_xsaveopt)
+		processor = PROCESSOR_BDVER3;
+	  else if (has_bmi)
+		processor = PROCESSOR_BDVER2;
+	  else if (has_xop)
 	processor = PROCESSOR_BDVER1;
-      else if (has_sse4a && has_ssse3)
-        processor = PROCESSOR_BTVER1;
-      else if (has_sse4a)
+	  else if (has_sse4a && has_ssse3)
+		processor = PROCESSOR_BTVER1;
+	  else if (has_sse4a)
 	processor = PROCESSOR_AMDFAM10;
-      else if (has_sse2 || has_longmode)
+	  else if (has_sse2 || has_longmode)
 	processor = PROCESSOR_K8;
-      else if (has_3dnowp && family == 6)
+	  else if (has_3dnowp && family == 6)
 	processor = PROCESSOR_ATHLON;
-      else if (has_mmx)
+	  else if (has_mmx)
 	processor = PROCESSOR_K6;
-      else
+	  else
 	processor = PROCESSOR_PENTIUM;
-    }
-  else if (vendor == signature_CENTAUR_ebx)
-    {
-      processor = PROCESSOR_GENERIC;
-
-      switch (family)
-	{
-	default:
-	  /* We have no idea.  */
-	  break;
-
-	case 5:
-	  if (has_3dnow || has_mmx)
-	    processor = PROCESSOR_I486;
-	  break;
-
-	case 6:
-	  if (model > 9 || has_longmode)
-	    /* Use the default detection procedure.  */
-	    ;
-	  else if (model == 9)
-	    processor = PROCESSOR_PENTIUMPRO;
-	  else if (model >= 6)
-	    processor = PROCESSOR_I486;
 	}
-    }
+  else if (vendor == signature_CENTAUR_ebx)
+	{
+	  if (arch)
+	{
+	  switch (family)
+		{
+		case 6:
+		  if (model > 9)
+		/* Use the default detection procedure.  */
+		processor = PROCESSOR_GENERIC32;
+		  else if (model == 9)
+		cpu = "c3-2";
+		  else if (model >= 6)
+		cpu = "c3";
+		  else
+		processor = PROCESSOR_GENERIC32;
+		  break;
+		case 5:
+		  if (has_3dnow)
+		cpu = "winchip2";
+		  else if (has_mmx)
+		cpu = "winchip2-c6";
+		  else
+		processor = PROCESSOR_GENERIC32;
+		  break;
+		default:
+		  /* We have no idea.  */
+		  processor = PROCESSOR_GENERIC32;
+		}
+	}
+	}
   else
-    {
-      switch (family)
+	{
+	  switch (family)
 	{
 	case 4:
 	  processor = PROCESSOR_I486;
@@ -292,50 +286,31 @@ const char *host_detect_local_cpu()
 	  break;
 	default:
 	  /* We have no idea.  */
-	  processor = PROCESSOR_GENERIC;
+	  processor = PROCESSOR_GENERIC32;
 	}
-    }
+	}
 
   switch (processor)
-    {
-    case PROCESSOR_I386:
-      /* Default.  */
-      break;
-    case PROCESSOR_I486:
-      if (arch && vendor == signature_CENTAUR_ebx)
 	{
-	  if (model >= 6)
-	    cpu = "c3";
-	  else if (has_3dnow)
-	    cpu = "winchip2";
-	  else
-	    /* Assume WinChip C6.  */
-	    cpu = "winchip-c6";
-	}
-      else
-	cpu = "i486";
-      break;
-    case PROCESSOR_PENTIUM:
-      if (arch && has_mmx)
+	case PROCESSOR_I386:
+	  /* Default.  */
+	  break;
+	case PROCESSOR_I486:
+	  cpu = "i486";
+	  break;
+	case PROCESSOR_PENTIUM:
+	  if (arch && has_mmx)
 	cpu = "pentium-mmx";
-      else
+	  else
 	cpu = "pentium";
-      break;
-    case PROCESSOR_PENTIUMPRO:
-      switch (model)
+	  break;
+	case PROCESSOR_PENTIUMPRO:
+	  switch (model)
 	{
 	case 0x1c:
 	case 0x26:
-	  /* Bonnell.  */
-	  cpu = "bonnell";
-	  break;
-	case 0x37:
-	case 0x4a:
-	case 0x4d:
-	case 0x5a:
-	case 0x5d:
-	  /* Silvermont.  */
-	  cpu = "silvermont";
+	  /* Atom.	*/
+	  cpu = "atom";
 	  break;
 	case 0x0f:
 	  /* Merom.  */
@@ -349,240 +324,188 @@ const char *host_detect_local_cpu()
 	case 0x1f:
 	case 0x2e:
 	  /* Nehalem.  */
-	  cpu = "nehalem";
-	  break;
 	case 0x25:
 	case 0x2c:
 	case 0x2f:
-	  /* Westmere.  */
-	  cpu = "westmere";
+	  /* Westmere.	*/
+	  cpu = "corei7";
 	  break;
 	case 0x2a:
 	case 0x2d:
-	  /* Sandy Bridge.  */
-	  cpu = "sandybridge";
+	  /* Sandy Bridge.	*/
+	  cpu = "corei7-avx";
 	  break;
 	case 0x3a:
 	case 0x3e:
 	  /* Ivy Bridge.  */
-	  cpu = "ivybridge";
+	  cpu = "core-avx-i";
 	  break;
 	case 0x3c:
-	case 0x3f:
 	case 0x45:
 	case 0x46:
 	  /* Haswell.  */
-	  cpu = "haswell";
-	  break;
-	case 0x3d:
-	case 0x4f:
-	case 0x56:
-	  /* Broadwell.  */
-	  cpu = "broadwell";
-	  break;
-	case 0x57:
-	  /* Knights Landing.  */
-	  cpu = "knl";
+	  cpu = "core-avx2";
 	  break;
 	default:
 	  if (arch)
-	    {
-	      /* This is unknown family 0x6 CPU.  */
-	      if (has_adx)
-		cpu = "broadwell";
-	      else if (has_avx2)
-		/* Assume Haswell.  */
-		cpu = "haswell";
-	      else if (has_avx)
+		{
+		  /* This is unknown family 0x6 CPU.  */
+		  if (has_avx2)
+		/* Assume Haswell.	*/
+		cpu = "core-avx2";
+		  else if (has_avx)
 		/* Assume Sandy Bridge.  */
-		cpu = "sandybridge";
-	      else if (has_sse4_2)
+		cpu = "corei7-avx";
+		  else if (has_sse4_2)
+		/* Assume Core i7.	*/
+		cpu = "corei7";
+		  else if (has_ssse3)
 		{
 		  if (has_movbe)
-		    /* Assume Silvermont.  */
-		    cpu = "silvermont";
+			/* Assume Atom.  */
+			cpu = "atom";
 		  else
-		    /* Assume Nehalem.  */
-		    cpu = "nehalem";
+			/* Assume Core 2.  */
+			cpu = "core2";
 		}
-	      else if (has_ssse3)
-		{
-		  if (has_movbe)
-		    /* Assume Bonnell.  */
-		    cpu = "bonnell";
-		  else
-		    /* Assume Core 2.  */
-		    cpu = "core2";
-		}
-	      else if (has_longmode)
-		/* Perhaps some emulator?  Assume x86-64, otherwise gcc
-		   -march=native would be unusable for 64-bit compilations,
-		   as all the CPUs below are 32-bit only.  */
-		cpu = "x86-64";
-	      else if (has_sse3)
-		/* It is Core Duo.  */
+		  else if (has_sse3)
+		/* It is Core Duo.	*/
 		cpu = "pentium-m";
-	      else if (has_sse2)
+		  else if (has_sse2)
 		/* It is Pentium M.  */
 		cpu = "pentium-m";
-	      else if (has_sse)
-		{
-		  if (vendor == signature_CENTAUR_ebx)
-		    cpu = "c3-2";
-		  else
-		    /* It is Pentium III.  */
-		    cpu = "pentium3";
-		}
-	      else if (has_mmx)
+		  else if (has_sse)
+		/* It is Pentium III.  */
+		cpu = "pentium3";
+		  else if (has_mmx)
 		/* It is Pentium II.  */
 		cpu = "pentium2";
-	      else
-		/* Default to Pentium Pro.  */
+		  else
+		/* Default to Pentium Pro.	*/
 		cpu = "pentiumpro";
-	    }
+		}
 	  else
-	    /* For -mtune, we default to -mtune=generic.  */
-	    cpu = "generic";
+		/* For -mtune, we default to -mtune=generic.  */
+		cpu = "generic";
 	  break;
 	}
-      break;
-    case PROCESSOR_PENTIUM4:
-      if (has_sse3)
+	  break;
+	case PROCESSOR_PENTIUM4:
+	  if (has_sse3)
 	{
 	  if (has_longmode)
-	    cpu = "nocona";
+		cpu = "nocona";
 	  else
-	    cpu = "prescott";
+		cpu = "prescott";
 	}
-      else
+	  else
 	cpu = "pentium4";
-      break;
-    case PROCESSOR_GEODE:
-      cpu = "geode";
-      break;
-    case PROCESSOR_K6:
-      if (arch && has_3dnow)
+	  break;
+	case PROCESSOR_GEODE:
+	  cpu = "geode";
+	  break;
+	case PROCESSOR_K6:
+	  if (arch && has_3dnow)
 	cpu = "k6-3";
-      else
+	  else
 	cpu = "k6";
-      break;
-    case PROCESSOR_ATHLON:
-      if (arch && has_sse)
+	  break;
+	case PROCESSOR_ATHLON:
+	  if (arch && has_sse)
 	cpu = "athlon-4";
-      else
+	  else
 	cpu = "athlon";
-      break;
-    case PROCESSOR_K8:
-      if (arch && has_sse3)
+	  break;
+	case PROCESSOR_K8:
+	  if (arch && has_sse3)
 	cpu = "k8-sse3";
-      else
+	  else
 	cpu = "k8";
-      break;
-    case PROCESSOR_AMDFAM10:
-      cpu = "amdfam10";
-      break;
-    case PROCESSOR_BDVER1:
-      cpu = "bdver1";
-      break;
-    case PROCESSOR_BDVER2:
-      cpu = "bdver2";
-      break;
-    case PROCESSOR_BDVER3:
-      cpu = "bdver3";
-      break;
-    case PROCESSOR_BDVER4:
-      cpu = "bdver4";
-      break;
-    case PROCESSOR_BTVER1:
-      cpu = "btver1";
-      break;
-    case PROCESSOR_BTVER2:
-      cpu = "btver2";
-      break;
+	  break;
+	case PROCESSOR_AMDFAM10:
+	  cpu = "amdfam10";
+	  break;
+	case PROCESSOR_BDVER1:
+	  cpu = "bdver1";
+	  break;
+	case PROCESSOR_BDVER2:
+	  cpu = "bdver2";
+	  break;
+	case PROCESSOR_BDVER3:
+	  cpu = "bdver3";
+	  break;
+	case PROCESSOR_BTVER1:
+	  cpu = "btver1";
+	  break;
+	case PROCESSOR_BTVER2:
+	  cpu = "btver2";
+	  break;
 
-    default:
-      /* Use something reasonable.  */
-      if (arch)
+	default:
+	  /* Use something reasonable.	*/
+	  if (arch)
 	{
 	  if (has_ssse3)
-	    cpu = "core2";
+		cpu = "core2";
 	  else if (has_sse3)
-	    {
-	      if (has_longmode)
+		{
+		  if (has_longmode)
 		cpu = "nocona";
-	      else
+		  else
 		cpu = "prescott";
-	    }
-	  else if (has_longmode)
-	    /* Perhaps some emulator?  Assume x86-64, otherwise gcc
-	       -march=native would be unusable for 64-bit compilations,
-	       as all the CPUs below are 32-bit only.  */
-	    cpu = "x86-64";
+		}
 	  else if (has_sse2)
-	    cpu = "pentium4";
+		cpu = "pentium4";
 	  else if (has_cmov)
-	    cpu = "pentiumpro";
+		cpu = "pentiumpro";
 	  else if (has_mmx)
-	    cpu = "pentium-mmx";
+		cpu = "pentium-mmx";
 	  else if (has_cmpxchg8b)
-	    cpu = "pentium";
+		cpu = "pentium";
 	}
-      else
+	  else
 	cpu = "generic";
-    }
+	}
 
   if (arch)
-    {
-      const char *mmx = has_mmx ? " -mmmx" : " -mno-mmx";
-      const char *mmx3dnow = has_3dnow ? " -m3dnow" : " -mno-3dnow";
-      const char *sse = has_sse ? " -msse" : " -mno-sse";
-      const char *sse2 = has_sse2 ? " -msse2" : " -mno-sse2";
-      const char *sse3 = has_sse3 ? " -msse3" : " -mno-sse3";
-      const char *ssse3 = has_ssse3 ? " -mssse3" : " -mno-ssse3";
-      const char *sse4a = has_sse4a ? " -msse4a" : " -mno-sse4a";
-      const char *cx16 = has_cmpxchg16b ? " -mcx16" : " -mno-cx16";
-      const char *sahf = has_lahf_lm ? " -msahf" : " -mno-sahf";
-      const char *movbe = has_movbe ? " -mmovbe" : " -mno-movbe";
-      const char *aes = has_aes ? " -maes" : " -mno-aes";
-      const char *sha = has_sha ? " -msha" : " -mno-sha";
-      const char *pclmul = has_pclmul ? " -mpclmul" : " -mno-pclmul";
-      const char *popcnt = has_popcnt ? " -mpopcnt" : " -mno-popcnt";
-      const char *abm = has_abm ? " -mabm" : " -mno-abm";
-      const char *lwp = has_lwp ? " -mlwp" : " -mno-lwp";
-      const char *fma = has_fma ? " -mfma" : " -mno-fma";
-      const char *fma4 = has_fma4 ? " -mfma4" : " -mno-fma4";
-      const char *xop = has_xop ? " -mxop" : " -mno-xop";
-      const char *bmi = has_bmi ? " -mbmi" : " -mno-bmi";
-      const char *bmi2 = has_bmi2 ? " -mbmi2" : " -mno-bmi2";
-      const char *tbm = has_tbm ? " -mtbm" : " -mno-tbm";
-      const char *avx = has_avx ? " -mavx" : " -mno-avx";
-      const char *avx2 = has_avx2 ? " -mavx2" : " -mno-avx2";
-      const char *sse4_2 = has_sse4_2 ? " -msse4.2" : " -mno-sse4.2";
-      const char *sse4_1 = has_sse4_1 ? " -msse4.1" : " -mno-sse4.1";
-      const char *lzcnt = has_lzcnt ? " -mlzcnt" : " -mno-lzcnt";
-      const char *hle = has_hle ? " -mhle" : " -mno-hle";
-      const char *rtm = has_rtm ? " -mrtm" : " -mno-rtm";
-      const char *rdrnd = has_rdrnd ? " -mrdrnd" : " -mno-rdrnd";
-      const char *f16c = has_f16c ? " -mf16c" : " -mno-f16c";
-      const char *fsgsbase = has_fsgsbase ? " -mfsgsbase" : " -mno-fsgsbase";
-      const char *rdseed = has_rdseed ? " -mrdseed" : " -mno-rdseed";
-      const char *prfchw = has_prfchw ? " -mprfchw" : " -mno-prfchw";
-      const char *adx = has_adx ? " -madx" : " -mno-adx";
-      const char *fxsr = has_fxsr ? " -mfxsr" : " -mno-fxsr";
-      const char *xsave = has_xsave ? " -mxsave" : " -mno-xsave";
-      const char *xsaveopt = has_xsaveopt ? " -mxsaveopt" : " -mno-xsaveopt";
-      const char *avx512f = has_avx512f ? " -mavx512f" : " -mno-avx512f";
-      const char *avx512er = has_avx512er ? " -mavx512er" : " -mno-avx512er";
-      const char *avx512cd = has_avx512cd ? " -mavx512cd" : " -mno-avx512cd";
-      const char *avx512pf = has_avx512pf ? " -mavx512pf" : " -mno-avx512pf";
-      const char *prefetchwt1 = has_prefetchwt1 ? " -mprefetchwt1" : " -mno-prefetchwt1";
+	{
+	  const char *cx16 = has_cmpxchg16b ? " -mcx16" : " -mno-cx16";
+	  const char *sahf = has_lahf_lm ? " -msahf" : " -mno-sahf";
+	  const char *movbe = has_movbe ? " -mmovbe" : " -mno-movbe";
+	  const char *ase = has_aes ? " -maes" : " -mno-aes";
+	  const char *pclmul = has_pclmul ? " -mpclmul" : " -mno-pclmul";
+	  const char *popcnt = has_popcnt ? " -mpopcnt" : " -mno-popcnt";
+	  const char *abm = has_abm ? " -mabm" : " -mno-abm";
+	  const char *lwp = has_lwp ? " -mlwp" : " -mno-lwp";
+	  const char *fma = has_fma ? " -mfma" : " -mno-fma";
+	  const char *fma4 = has_fma4 ? " -mfma4" : " -mno-fma4";
+	  const char *xop = has_xop ? " -mxop" : " -mno-xop";
+	  const char *bmi = has_bmi ? " -mbmi" : " -mno-bmi";
+	  const char *bmi2 = has_bmi2 ? " -mbmi2" : " -mno-bmi2";
+	  const char *tbm = has_tbm ? " -mtbm" : " -mno-tbm";
+	  const char *avx = has_avx ? " -mavx" : " -mno-avx";
+	  const char *avx2 = has_avx2 ? " -mavx2" : " -mno-avx2";
+	  const char *sse4_2 = has_sse4_2 ? " -msse4.2" : " -mno-sse4.2";
+	  const char *sse4_1 = has_sse4_1 ? " -msse4.1" : " -mno-sse4.1";
+	  const char *lzcnt = has_lzcnt ? " -mlzcnt" : " -mno-lzcnt";
+	  const char *hle = has_hle ? " -mhle" : " -mno-hle";
+	  const char *rtm = has_rtm ? " -mrtm" : " -mno-rtm";
+	  const char *rdrnd = has_rdrnd ? " -mrdrnd" : " -mno-rdrnd";
+	  const char *f16c = has_f16c ? " -mf16c" : " -mno-f16c";
+	  const char *fsgsbase = has_fsgsbase ? " -mfsgsbase" : " -mno-fsgsbase";
+	  const char *rdseed = has_rdseed ? " -mrdseed" : " -mno-rdseed";
+	  const char *prfchw = has_prfchw ? " -mprfchw" : " -mno-prfchw";
+	  const char *adx = has_adx ? " -madx" : " -mno-adx";
+	  const char *fxsr = has_fxsr ? " -mfxsr" : " -mno-fxsr";
+	  const char *xsave = has_xsave ? " -mxsave" : " -mno-xsave";
+	  const char *xsaveopt = has_xsaveopt ? " -mxsaveopt" : " -mno-xsaveopt";
 
-    }
+	}
 
 done:
-	/* we only need arch name */
   return cpu;
 }
+
 
 int main(int argc, char *argv[])
 {

@@ -1,5 +1,6 @@
-//ДњТыеЊздgccдДТы
-
+/*
+ * scratch from source code of gcc-4.8.2
+ */
 
 /* %ecx */
 #define bit_SSE3	(1 << 0)
@@ -45,23 +46,14 @@
 #define bit_3DNOW	(1 << 31)
 
 /* Extended Features (%eax == 7) */
-/* %ebx */
 #define bit_FSGSBASE	(1 << 0)
 #define bit_BMI	(1 << 3)
 #define bit_HLE	(1 << 4)
 #define bit_AVX2	(1 << 5)
 #define bit_BMI2	(1 << 8)
 #define bit_RTM	(1 << 11)
-#define bit_AVX512F	(1 << 16)
 #define bit_RDSEED	(1 << 18)
 #define bit_ADX	(1 << 19)
-#define bit_AVX512PF	(1 << 26)
-#define bit_AVX512ER	(1 << 27)
-#define bit_AVX512CD	(1 << 28)
-#define bit_SHA		(1 << 29)
-
-/* %ecx */
-#define bit_PREFETCHWT1	  (1 << 0)
 
 /* Extended State Enumeration Sub-leaf (%eax == 13, %ecx == 1) */
 #define bit_XSAVEOPT	(1 << 0)
