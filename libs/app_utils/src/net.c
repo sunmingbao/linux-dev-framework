@@ -631,50 +631,6 @@ void get_proto_name(char *info, t_ether_packet *pt_eth_hdr)
         sprintf(info, "%s", info2);
 }
 
-void append_err_text(char *info, uint32_t err_flags)
-{
-    if (err_flags==0) return;
-    
-    strcat(info, "(error:");
-    if (err_flags&ERR_IP_CHECKSUM)
-    {
-        strcat(info, "ip check sum");
-        goto exit;
-    }
-
-    if (err_flags&ERR_ICMP_CHECKSUM)
-    {
-        strcat(info, "icmp check sum");
-        goto exit;
-    }
-
-    if (err_flags&ERR_IGMP_CHECKSUM)
-    {
-        strcat(info, "igmp check sum");
-        goto exit;
-    }
-
-    if (err_flags&ERR_TCP_CHECKSUM)
-    {
-        strcat(info, "tcp check sum");
-        goto exit;
-    }
-
-    if (err_flags&ERR_UDP_CHECKSUM)
-    {
-        strcat(info, "udp check sum");
-        goto exit;
-    }
-
-    if (err_flags&ERR_PKT_LEN)
-    {
-        strcat(info, "packet length");
-        goto exit;
-    }
-exit:
-    strcat(info, ")");
-    
-}
 
 void get_pkt_desc_info_v4(char *info, void* p_eth_hdr)
 {
@@ -765,6 +721,7 @@ void get_pkt_desc_info(char *info, void* p_eth_hdr, uint32_t err_flags)
 {
     t_ether_packet *pt_eth_hdr = p_eth_hdr;
     t_arp_hdr *arp_hdr = eth_data(pt_eth_hdr);
+	t_arp_hdr6 *arp_hdr6=(void *)arp_hdr;
     char info_2[64];
     int type = eth_type(pt_eth_hdr);
 
@@ -784,18 +741,28 @@ void get_pkt_desc_info(char *info, void* p_eth_hdr, uint32_t err_flags)
                 }
                 else if (16==arp_hdr->ar_pln)
                 {
-                    ip6_n2str(info_2, arp_hdr->ar_sip+22);
+                    ip6_n2str(info_2, arp_hdr6->ar_tip);
                     sprintf(info, "who has %s? tell ", info_2);
-                    ip6_n2str(info_2, arp_hdr->ar_sip);
+                    ip6_n2str(info_2, arp_hdr6->ar_sip);
                     strcat(info, info_2);
                 }
             }
             else if (ntohs(arp_hdr->ar_op)==2)
             {
-                ip_n2str(info_2, arp_hdr->ar_sip);
-                sprintf(info, "%s is at ", info_2);
-                mac_n2str(info_2, arp_hdr->ar_sha);
-                strcat(info, info_2);
+                if (4==arp_hdr->ar_pln)
+                {
+	                ip_n2str(info_2, arp_hdr->ar_sip);
+	                sprintf(info, "%s is at ", info_2);
+	                mac_n2str(info_2, arp_hdr->ar_sha);
+	                strcat(info, info_2);
+				}
+                else if (16==arp_hdr->ar_pln)
+                {
+                    ip6_n2str(info_2, arp_hdr6->ar_sip);
+                    sprintf(info, "%s is at ", info_2);
+                    mac_n2str(info_2, arp_hdr->ar_sha);
+                    strcat(info, info_2);
+                }
             }
             
             goto append_err_info;
@@ -846,7 +813,7 @@ void get_pkt_desc_info(char *info, void* p_eth_hdr, uint32_t err_flags)
     }
 
 append_err_info:
-    append_err_text(info, err_flags);
+    //append_err_text(info, err_flags);
 
     return;
 
@@ -971,43 +938,42 @@ int icmp_checksum_wrong6(t_ipv6_hdr *ip6h)
     return pt_icmp_hdr->checksum !=tcp_udp_checksum6(ip6h);
 }
 
-void update_check_sum_v4(t_stream *pt_stream)
+void update_check_sum_v4(void *pt_stream)
 {
-    t_ip_hdr *iph=eth_data(pt_stream->data);
-    if (pt_stream->flags & CHECK_SUM_IP)
+    t_ip_hdr *iph=eth_data(pt_stream);
         ip_update_check(iph);
 
-    if (ip_pkt_is_frag(&(pt_stream->eth_packet))) return;
+    if (ip_pkt_is_frag(pt_stream)) return;
     
-    if (iph->protocol==IPPROTO_ICMP && (pt_stream->flags & CHECK_SUM_ICMP))
+    if (iph->protocol==IPPROTO_ICMP)
         icmp_igmp_update_check(iph);
-    else if (iph->protocol==IPPROTO_IGMP && (pt_stream->flags & CHECK_SUM_IGMP))
+    else if (iph->protocol==IPPROTO_IGMP)
         icmp_igmp_update_check(iph);
-    else if (iph->protocol==IPPROTO_TCP && (pt_stream->flags & CHECK_SUM_TCP))
+    else if (iph->protocol==IPPROTO_TCP)
         tcp_update_check(iph);
-    else if (iph->protocol==IPPROTO_UDP && (pt_stream->flags & CHECK_SUM_UDP))
+    else if (iph->protocol==IPPROTO_UDP)
         udp_update_check(iph);
 
 }
 
-void update_check_sum_v6(t_stream *pt_stream)
+void update_check_sum_v6(void *pt_stream)
 {
-    t_ipv6_hdr *ip6h=eth_data(pt_stream->data);
+    t_ipv6_hdr *ip6h=eth_data(pt_stream);
 
-    if (ip_pkt_is_frag(&(pt_stream->eth_packet))) return;
+    if (ip_pkt_is_frag(pt_stream)) return;
 
-    if (ip6h->nexthdr==IPPROTO_TCP && (pt_stream->flags & CHECK_SUM_TCP))
+    if (ip6h->nexthdr==IPPROTO_TCP)
         tcp_update_check6(ip6h);
-    else if (ip6h->nexthdr==IPPROTO_UDP && (pt_stream->flags & CHECK_SUM_UDP))
+    else if (ip6h->nexthdr==IPPROTO_UDP)
         udp_update_check6(ip6h);
-    else if (ip6h->nexthdr==IPPROTO_ICMPV6 && (pt_stream->flags & CHECK_SUM_ICMP))
+    else if (ip6h->nexthdr==IPPROTO_ICMPV6)
         icmp_update_check6(ip6h);
 
 }
 
-void update_check_sum(t_stream *pt_stream)
+void update_check_sum(void *pt_stream)
 {
-    int type = eth_type(pt_stream->data);
+    int type = eth_type(pt_stream);
     if (type==ETH_P_IP)
         update_check_sum_v4(pt_stream);
    else if (type==ETH_P_IPV6)
@@ -1016,35 +982,33 @@ void update_check_sum(t_stream *pt_stream)
 }
 
 
-void update_len_v4(t_stream *pt_stream)
+void update_len_v4(void *pt_stream, int len)
 {
-    t_ip_hdr *iph=eth_data(pt_stream->data);
+    t_ip_hdr *iph=eth_data(pt_stream);
     t_udp_hdr *udph=ip_data(iph);
-    if (pt_stream->flags & IP_LEN)
-        iph->tot_len = htons(pt_stream->len - eth_hdr_len(pt_stream->data));
-    if (iph->protocol==IPPROTO_UDP && (pt_stream->flags & UDP_LEN))
-        udph->len = htons(pt_stream->len - eth_hdr_len(pt_stream->data) - ip_hdr_len(iph));
+    iph->tot_len = htons(len - eth_hdr_len(pt_stream));
+    if (iph->protocol==IPPROTO_UDP)
+        udph->len = htons(ip_data_len(iph));
 
 }
 
-void update_len_v6(t_stream *pt_stream)
+void update_len_v6(void *pt_stream, int len)
 {
-    t_ipv6_hdr *ip6h =eth_data(pt_stream->data);
+    t_ipv6_hdr *ip6h =eth_data(pt_stream);
     t_udp_hdr *udph=ip6_data(ip6h);
-    if (pt_stream->flags & IP_LEN)
-        set_ip6_pkt_len(ip6h, pt_stream->len - eth_hdr_len(pt_stream->data));
-    if (ip6h->nexthdr==IPPROTO_UDP && (pt_stream->flags & UDP_LEN))
+        set_ip6_pkt_len(ip6h, len - eth_hdr_len(pt_stream));
+    if (ip6h->nexthdr==IPPROTO_UDP)
         udph->len = htons(ip6_data_len(ip6h));
 
 }
 
-void update_len(t_stream *pt_stream)
+void update_len(void *pt_stream, int len)
 {
-int type = eth_type(pt_stream->data);
+int type = eth_type(pt_stream);
     if (type==ETH_P_IP)
-        update_len_v4(pt_stream);
+        update_len_v4(pt_stream, len);
    else if (type==ETH_P_IPV6)
-       update_len_v6(pt_stream);
+       update_len_v6(pt_stream, len);
 }
 
 

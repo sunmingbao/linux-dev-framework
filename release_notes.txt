@@ -1,8 +1,8 @@
 
-	linux-dev-framework v2.0.1
+	linux-dev-framework v2.0.2
 
 发布日期：2016/10/18
 
 更新内容：
 
-    修改了编译脚本，使得不同的lib/app能够自定义CFLAGS/LDFLAGS/-I选项/-l选项。
+    代码完善。

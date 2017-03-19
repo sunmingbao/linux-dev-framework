@@ -57,8 +57,6 @@ const char *host_detect_local_cpu()
   enum processor_type processor = PROCESSOR_I386;
   const char *cpu = "i386";
 
-  const char *cache = "";
-  const char *options = "";
 
   unsigned int eax, ebx, ecx, edx;
 
@@ -67,25 +65,21 @@ const char *host_detect_local_cpu()
   unsigned int vendor;
   unsigned int model, family;
 
-  unsigned int has_sse3, has_ssse3, has_cmpxchg16b;
+  unsigned int has_sse3, has_ssse3;
   unsigned int has_cmpxchg8b, has_cmov, has_mmx, has_sse, has_sse2;
 
   /* Extended features */
-  unsigned int has_lahf_lm = 0, has_sse4a = 0;
+  unsigned int has_sse4a = 0;
   unsigned int has_longmode = 0, has_3dnowp = 0, has_3dnow = 0;
-  unsigned int has_movbe = 0, has_sse4_1 = 0, has_sse4_2 = 0;
-  unsigned int has_popcnt = 0, has_aes = 0, has_avx = 0, has_avx2 = 0;
-  unsigned int has_pclmul = 0, has_abm = 0, has_lwp = 0;
-  unsigned int has_fma = 0, has_fma4 = 0, has_xop = 0;
-  unsigned int has_bmi = 0, has_bmi2 = 0, has_tbm = 0, has_lzcnt = 0;
-  unsigned int has_hle = 0, has_rtm = 0;
-  unsigned int has_rdrnd = 0, has_f16c = 0, has_fsgsbase = 0;
-  unsigned int has_rdseed = 0, has_prfchw = 0, has_adx = 0;
-  unsigned int has_osxsave = 0, has_fxsr = 0, has_xsave = 0, has_xsaveopt = 0;
+  unsigned int has_movbe = 0, has_sse4_2 = 0;
+  unsigned int has_avx = 0, has_avx2 = 0;
+  unsigned int has_xop = 0;
+  unsigned int has_bmi = 0;
+  unsigned int has_osxsave = 0, has_xsaveopt = 0;
 
   int arch=1;
 
-  unsigned int l2sizekb = 0;
+
 
 
 
@@ -115,24 +109,14 @@ const char *host_detect_local_cpu()
 
   has_sse3 = ecx & bit_SSE3;
   has_ssse3 = ecx & bit_SSSE3;
-  has_sse4_1 = ecx & bit_SSE4_1;
   has_sse4_2 = ecx & bit_SSE4_2;
   has_avx = ecx & bit_AVX;
   has_osxsave = ecx & bit_OSXSAVE;
-  has_cmpxchg16b = ecx & bit_CMPXCHG16B;
   has_movbe = ecx & bit_MOVBE;
-  has_popcnt = ecx & bit_POPCNT;
-  has_aes = ecx & bit_AES;
-  has_pclmul = ecx & bit_PCLMUL;
-  has_fma = ecx & bit_FMA;
-  has_f16c = ecx & bit_F16C;
-  has_rdrnd = ecx & bit_RDRND;
-  has_xsave = ecx & bit_XSAVE;
 
   has_cmpxchg8b = edx & bit_CMPXCHG8B;
   has_cmov = edx & bit_CMOV;
   has_mmx = edx & bit_MMX;
-  has_fxsr = edx & bit_FXSAVE;
   has_sse = edx & bit_SSE;
   has_sse2 = edx & bit_SSE2;
 
@@ -141,13 +125,7 @@ const char *host_detect_local_cpu()
 	  __cpuid_count (7, 0, eax, ebx, ecx, edx);
 
 	  has_bmi = ebx & bit_BMI;
-	  has_hle = ebx & bit_HLE;
-	  has_rtm = ebx & bit_RTM;
 	  has_avx2 = ebx & bit_AVX2;
-	  has_bmi2 = ebx & bit_BMI2;
-	  has_fsgsbase = ebx & bit_FSGSBASE;
-	  has_rdseed = ebx & bit_RDSEED;
-	  has_adx = ebx & bit_ADX;
 	}
 
   if (max_level >= 13)
@@ -173,10 +151,7 @@ const char *host_detect_local_cpu()
 	{
 	  has_avx = 0;
 	  has_avx2 = 0;
-	  has_fma = 0;
-	  has_fma4 = 0;
 	  has_xop = 0;
-	  has_xsave = 0;
 	  has_xsaveopt = 0;
 	}
 
@@ -187,15 +162,8 @@ const char *host_detect_local_cpu()
 	{
 	  __cpuid (0x80000001, eax, ebx, ecx, edx);
 
-	  has_lahf_lm = ecx & bit_LAHF_LM;
 	  has_sse4a = ecx & bit_SSE4a;
-	  has_abm = ecx & bit_ABM;
-	  has_lwp = ecx & bit_LWP;
-	  has_fma4 = ecx & bit_FMA4;
 	  has_xop = ecx & bit_XOP;
-	  has_tbm = ecx & bit_TBM;
-	  has_lzcnt = ecx & bit_LZCNT;
-	  has_prfchw = ecx & bit_PRFCHW;
 
 	  has_longmode = edx & bit_LM;
 	  has_3dnowp = edx & bit_3DNOWP;
@@ -467,40 +435,6 @@ const char *host_detect_local_cpu()
 	cpu = "generic";
 	}
 
-  if (arch)
-	{
-	  const char *cx16 = has_cmpxchg16b ? " -mcx16" : " -mno-cx16";
-	  const char *sahf = has_lahf_lm ? " -msahf" : " -mno-sahf";
-	  const char *movbe = has_movbe ? " -mmovbe" : " -mno-movbe";
-	  const char *ase = has_aes ? " -maes" : " -mno-aes";
-	  const char *pclmul = has_pclmul ? " -mpclmul" : " -mno-pclmul";
-	  const char *popcnt = has_popcnt ? " -mpopcnt" : " -mno-popcnt";
-	  const char *abm = has_abm ? " -mabm" : " -mno-abm";
-	  const char *lwp = has_lwp ? " -mlwp" : " -mno-lwp";
-	  const char *fma = has_fma ? " -mfma" : " -mno-fma";
-	  const char *fma4 = has_fma4 ? " -mfma4" : " -mno-fma4";
-	  const char *xop = has_xop ? " -mxop" : " -mno-xop";
-	  const char *bmi = has_bmi ? " -mbmi" : " -mno-bmi";
-	  const char *bmi2 = has_bmi2 ? " -mbmi2" : " -mno-bmi2";
-	  const char *tbm = has_tbm ? " -mtbm" : " -mno-tbm";
-	  const char *avx = has_avx ? " -mavx" : " -mno-avx";
-	  const char *avx2 = has_avx2 ? " -mavx2" : " -mno-avx2";
-	  const char *sse4_2 = has_sse4_2 ? " -msse4.2" : " -mno-sse4.2";
-	  const char *sse4_1 = has_sse4_1 ? " -msse4.1" : " -mno-sse4.1";
-	  const char *lzcnt = has_lzcnt ? " -mlzcnt" : " -mno-lzcnt";
-	  const char *hle = has_hle ? " -mhle" : " -mno-hle";
-	  const char *rtm = has_rtm ? " -mrtm" : " -mno-rtm";
-	  const char *rdrnd = has_rdrnd ? " -mrdrnd" : " -mno-rdrnd";
-	  const char *f16c = has_f16c ? " -mf16c" : " -mno-f16c";
-	  const char *fsgsbase = has_fsgsbase ? " -mfsgsbase" : " -mno-fsgsbase";
-	  const char *rdseed = has_rdseed ? " -mrdseed" : " -mno-rdseed";
-	  const char *prfchw = has_prfchw ? " -mprfchw" : " -mno-prfchw";
-	  const char *adx = has_adx ? " -madx" : " -mno-adx";
-	  const char *fxsr = has_fxsr ? " -mfxsr" : " -mno-fxsr";
-	  const char *xsave = has_xsave ? " -mxsave" : " -mno-xsave";
-	  const char *xsaveopt = has_xsaveopt ? " -mxsaveopt" : " -mno-xsaveopt";
-
-	}
 
 done:
   return cpu;

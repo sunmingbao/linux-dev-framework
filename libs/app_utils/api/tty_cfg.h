@@ -8,23 +8,13 @@
  * ” œ‰: sunmingbao@126.com
  */
 
-#include <stdio.h>
-#include "tty_cfg.h"
+#ifndef  __TTY_CFG_H__
+#define  __TTY_CFG_H__
 
-#include "debug.h"
-#include "a.h"
 
-int main(int argc, char *argv[])
-{
-    DBG_PRINT("2+3=%d", add_num(2, 3));
+int set_tty_input_to_raw_mode();
+int restore_tty_input_mode();
 
-set_tty_input_to_raw_mode();
-	while (1)
-	{
 
-	    DBG_PRINT("%c", getchar());
-
-	}
-    return 0;
-}
+#endif
 

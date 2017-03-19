@@ -12,6 +12,7 @@
 #define  __COMMON_H__
 
 #define    ARRAY_SIZE(array_name)    (sizeof(array_name)/sizeof(array_name[0]))
+#define    MEMBER_OFFSET(type_name, member_name)    ((unsigned long)(void *)(&(((type_name *)NULL)->member_name)))
 
 #endif
 

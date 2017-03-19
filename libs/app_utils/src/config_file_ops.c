@@ -150,7 +150,7 @@ int parse_config_file(char *path_to_config_file, int need_update)
 	char *linepos;
 	char *variable;
 	char *value;
-	size_t cur;
+
 	size_t count;
 	int lineno;
 	int retval = 0;
@@ -178,7 +178,7 @@ int parse_config_file(char *path_to_config_file, int need_update)
 
 	/* loop through the whole file */
 	lineno = 0;
-	cur = 0;
+
 	while (NULL != fgets(line, sizeof(line), cfg_file)) 
     {
 		lineno++;

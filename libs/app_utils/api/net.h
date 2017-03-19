@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 #include <arpa/inet.h>
+#include <endian.h>
+
 #include "defs.h"
 
 
@@ -44,8 +46,20 @@ typedef struct
 {
     unsigned char dst[6];
     unsigned char src[6];
-    char     tag_802_1Q[4];
-    unsigned short type;
+    uint16_t tpid;
+#if __BYTE_ORDER == __BIG_ENDIAN
+	uint16_t priority:3,
+		     cfi:1,
+		     vlan_id:12;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+		uint16_t vlan_id:3,
+				 cfi:1,
+				 priority:12;
+#else
+#error "unknown endian"
+#endif
+
+    uint16_t type;
 } __attribute__((packed)) t_ether_vlan_packet;
 
 static inline __u16 get_eth_type_from_addr(void *addr)
@@ -106,8 +120,15 @@ static inline void * eth_data(void *p_eth_hdr)
 
 typedef struct 
 {
+#if __BYTE_ORDER == __BIG_ENDIAN
+__u8	version:4,
+			ihl:4;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
 	__u8	ihl:4,
 		version:4;
+#else
+#error "unknown endian"
+#endif
 	__u8	tos;
 	__u16	tot_len;
 	__u16	id;
@@ -222,16 +243,32 @@ typedef struct
 	__u32	seq;
 	__u32	ack_seq;
 
-	__u16	res1:4,
-		doff:4,
-		fin:1,
-		syn:1,
-		rst:1,
-		psh:1,
-		ack:1,
-		urg:1,
-		ece:1,
-		cwr:1;
+#if __BYTE_ORDER == __BIG_ENDIAN
+		__u16	doff:4,
+			res1:4,
+			cwr:1,
+			ece:1,
+			urg:1,
+			ack:1,
+			psh:1,
+			rst:1,
+			syn:1,
+			fin:1;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+			__u16	res1:4,
+				doff:4,
+				fin:1,
+				syn:1,
+				rst:1,
+				psh:1,
+				ack:1,
+				urg:1,
+				ece:1,
+				cwr:1;
+#else
+#error "unknown endian"
+#endif
+
 
 	__u16	window;
 	__u16	check;
@@ -286,6 +323,26 @@ typedef struct
 
 } __attribute__((packed))  t_arp_hdr;
 
+typedef struct
+{
+	unsigned short	ar_hrd;		/* format of hardware address	*/
+	unsigned short	ar_pro;		/* format of protocol address	*/
+	unsigned char	ar_hln;		/* length of hardware address	*/
+	unsigned char	ar_pln;		/* length of protocol address	*/
+	unsigned short	ar_op;		/* ARP opcode (command)		*/
+
+#if 1
+	 /*
+	  *	 Ethernet looks like this : This bit is variable sized however...
+	  */
+	unsigned char		ar_sha[6];	/* sender hardware address	*/
+	unsigned char		ar_sip[16];		/* sender IP address		*/
+	unsigned char		ar_tha[6];	/* target hardware address	*/
+	unsigned char		ar_tip[16];		/* target IP address		*/
+#endif
+
+} __attribute__((packed))  t_arp_hdr6;
+
 static inline int arp_pkt_len(t_arp_hdr *pt_arp_hdr)
 {
     return FIXED_ARP_HDR_LEN + 12 + pt_arp_hdr->ar_pln*2;
@@ -295,9 +352,20 @@ static inline int arp_pkt_len(t_arp_hdr *pt_arp_hdr)
 #define IPV6_ADDR_LEN   16
 typedef struct 
 {
-	__u8			priority:4,
-				    version:4;
-	__u8			flow_lbl[3];
+#if __BYTE_ORDER == __BIG_ENDIAN
+	__u32    version:4,
+             priority:4,
+             flow_lbl:24;
+
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+		__u32	 flow_lbl:4,
+				 priority:4,
+				 version:24;
+#else
+#error "unknown endian"
+#endif
+
+
 
 	__u16			payload_len;
 	__u8			nexthdr;
@@ -399,76 +467,13 @@ void ip_n2str(char *info, void * field_addr);
 void ip6_n2str(char *info, void * field_addr);
 void ip6_str2n(void *field_addr, char *info);
 
-typedef struct
-{
-    char     valid;
-    uint32_t flags;
-    uint16_t offset;
-    uint8_t  width;
-    char     bits_from;
-    char     bits_len;
-    char     rsv[4];
-    uint8_t base_value[8];
-    uint8_t max_value[8];
-    uint32_t step_size;
-} __attribute__((packed)) t_rule;
-
-#define    MAX_FIELD_RULE_NUM    (10)
-typedef struct
-{
-    int  selected;
-    char snd_cnt;
-    char rsv[7];
-    char name[64];
-    uint32_t flags;
-    char    rule_num;
-    char    rule_idx[MAX_FIELD_RULE_NUM];
-    t_rule  at_rules[MAX_FIELD_RULE_NUM];
-    int len;
-    union
-    {
-        t_ether_packet eth_packet;
-        unsigned char data[MAX_PACKET_LEN];
-    };
-
-    //non save info
-    uint32_t err_flags;
-
-} __attribute__((packed)) t_stream;
-
-/* t_stream.flags */
-#define    CHECK_SUM_IP      0x1
-#define    CHECK_SUM_ICMP    0x2
-#define    CHECK_SUM_IGMP    0x4
-#define    CHECK_SUM_UDP     0x8
-#define    CHECK_SUM_TCP     0x10
-#define    CHECK_SUM_ALL  \
-    (CHECK_SUM_IP|CHECK_SUM_ICMP|CHECK_SUM_IGMP|CHECK_SUM_UDP|CHECK_SUM_TCP)
-
-#define    IP_LEN    0x20
-#define    UDP_LEN   0x40
-#define    LEN_ALL  (IP_LEN|UDP_LEN)
 
 
-#define    ERR_IP_CHECKSUM     (0x1<<30)
-#define    ERR_UDP_CHECKSUM    (0x1<<29)
-#define    ERR_TCP_CHECKSUM    (0x1<<28)
-#define    ERR_PKT_LEN         (0x1<<27)
-#define    ERR_ICMP_CHECKSUM    (0x1<<26)
-#define    ERR_IGMP_CHECKSUM    (0x1<<25)
 
-#define    STREAM_HDR_LEN    ((unsigned long)(void *)(&(((t_stream *)NULL)->data)))
 
-#define    MAX_STREAM_NUM    100
-extern int  nr_cur_stream;
-extern int  copy_idx;
-extern t_stream    *g_apt_streams[MAX_STREAM_NUM];
-void init_stream(t_stream    *pt_streams);
-int make_frags(const t_stream *pt_stream, int frag_num);
-void get_pkt_desc_info(char *info, void* p_eth_hdr, uint32_t err_flags);
-uint32_t  build_err_flags(t_ether_packet *pt_eth, int len);
-void update_stream(t_stream* pt_stream);
-int delete_all_rule(t_stream *pt_stream);
+
+
+
 
 void get_src_addr(char *info, t_ether_packet *pt_eth_hdr);
 void get_dst_addr(char *info, t_ether_packet *pt_eth_hdr);
