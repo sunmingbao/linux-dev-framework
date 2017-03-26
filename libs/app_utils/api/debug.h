@@ -22,18 +22,21 @@
     do \
     { \
         printf("DBG:%s(%d)-%s:\n"fmt"\n", __FILE__,__LINE__,__FUNCTION__,##args); \
+        fflush(stdout); \
     } while (0)
 
 #define    DBG_PRINT_S(fmt, args...) \
     do \
     { \
         printf("DBG:%s(%d)-%s:\n"fmt"\n", strrchr(__FILE__, '/')+1,__LINE__,__FUNCTION__,##args); \
+        fflush(stdout); \
     } while (0)
 
 #define    DBG_PRINT_QUIT(fmt, args...) \
     do \
     { \
         printf("DBG:%s(%d)-%s:\n"fmt"\n", __FILE__,__LINE__,__FUNCTION__,##args); \
+        fflush(stdout); \
         exit(1); \
     } while (0)
 
@@ -41,12 +44,14 @@
     do \
     { \
         printf("ERR_DBG:%s(%d)-%s:\n"fmt": %s\n", __FILE__,__LINE__,__FUNCTION__,##args, strerror(errno)); \
+        fflush(stdout); \
     } while (0)
 
 #define    ERR_DBG_PRINT_QUIT(fmt, args...) \
     do \
     { \
         printf("ERR_DBG_QUIT:%s(%d)-%s:\n"fmt": %s\n", __FILE__,__LINE__,__FUNCTION__,##args, strerror(errno)); \
+        fflush(stdout); \
         exit(1); \
     } while (0)
 

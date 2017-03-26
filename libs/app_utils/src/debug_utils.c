@@ -33,6 +33,7 @@ void print_mem(void *start_addr, uint32_t length)
         length -= 16;
         cur_pos += 16;
         printf("%s: %s: %s\n", str_addr, str_data, str_readable);
+		fflush(stdout);
     }
 
     if (length > 0)
@@ -52,6 +53,7 @@ void print_mem(void *start_addr, uint32_t length)
             sprintf(str_readable + i, "%c", ' ');
         }
         printf("%s: %s: %s\n", str_addr, str_data, str_readable);
+		fflush(stdout);
     }
 
 

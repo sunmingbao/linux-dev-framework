@@ -1,7 +1,7 @@
 
-	linux-dev-framework v2.0.2
+	linux-dev-framework v2.0.3
 
-发布日期：2016/10/18
+发布日期：2017/3/26
 
 更新内容：
 
