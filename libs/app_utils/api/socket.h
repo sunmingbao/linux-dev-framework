@@ -31,5 +31,7 @@ char * get_ipstr(struct sockaddr_in *sock_addr, char *ip);
 uint16_t get_port(struct sockaddr_in *sock_addr, uint16_t *port);
 void set_socket_timeout(int sockfd, int snd, int rcv);
 void set_useful_sock_opt(int sockfd);
+int create_l2_raw_socket(const char *if_name);
+
 #endif
 

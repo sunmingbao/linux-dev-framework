@@ -17,6 +17,12 @@
 #include <signal.h>
 #include <sys/time.h>
 
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netpacket/packet.h>
+#include <net/ethernet.h> /* the L2 protocols */
+
 #include "debug.h"
 #include "log.h"
 #include "socket.h"
@@ -172,3 +178,49 @@ void set_useful_sock_opt(int sockfd)
     setsockopt(sockfd,SOL_SOCKET,SO_SNDBUF,&nSendBuf,optlen);
     setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&reuse_addr,optlen);
 }
+
+int get_if_idx(const char *if_name)
+{
+    struct ifreq       ifr;
+    int ret, sockfd;
+    
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+     memset ((void*)&ifr, 0, sizeof (ifr));
+ 
+     snprintf (ifr.ifr_name, sizeof (ifr.ifr_name), if_name);
+ 
+     ret = ioctl(sockfd, SIOCGIFINDEX, &ifr);
+     if (ret < 0) {
+        
+        ERR_DBG_PRINT_QUIT("get idx of interface %s failed", if_name);
+     }
+
+     ret = ifr.ifr_ifindex;
+     close(sockfd);
+
+     return ret;
+
+}
+
+int create_l2_raw_socket(const char *if_name)
+{
+    int ret;
+    struct sockaddr_ll sock_addr = {
+        .sll_family = AF_PACKET,
+        .sll_protocol = 0,
+        .sll_ifindex = get_if_idx(if_name)
+    };
+    
+    int fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    if (fd<0)
+        ERR_DBG_PRINT_QUIT("Create L2 socket failed");
+
+    ret = bind(fd, (struct sockaddr *)&sock_addr, sizeof(struct sockaddr_ll));
+    if (ret<0)
+        ERR_DBG_PRINT_QUIT("bind socket failed");
+
+    return fd;
+}
+
+
