@@ -28,7 +28,7 @@ void print_mem(void *start_addr, uint32_t length)
             if (cur_pos[i] > 31 &&  cur_pos[i] < 127)
             sprintf(str_readable + i, "%c", (char)(cur_pos[i]));
             else
-            sprintf(str_readable + i, "%c", '*');
+            sprintf(str_readable + i, "%c", '.');
         }
         length -= 16;
         cur_pos += 16;
@@ -45,7 +45,7 @@ void print_mem(void *start_addr, uint32_t length)
             if (cur_pos[i] > 31 &&  cur_pos[i] < 127)
             sprintf(str_readable + i, "%c", (char)(cur_pos[i]));
             else
-            sprintf(str_readable + i, "%c", '*');
+            sprintf(str_readable + i, "%c", '.');
         }
         for (i = length; i < 16; i++)
         {

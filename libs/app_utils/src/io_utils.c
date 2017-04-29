@@ -36,6 +36,7 @@ int fd_read_or_write_able(int fd, int sec, int usec, int test_read)
 
     if (retval == -1)
     {
+       if (EINTR==errno) return 0;
        return 1;
     }
     

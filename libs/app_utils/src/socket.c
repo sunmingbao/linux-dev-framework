@@ -19,6 +19,8 @@
 
 #include <net/if.h>
 #include <sys/ioctl.h>
+#include <arpa/inet.h>
+
 #include <sys/socket.h>
 #include <netpacket/packet.h>
 #include <net/ethernet.h> /* the L2 protocols */
@@ -60,6 +62,14 @@ void make_sockaddr(struct sockaddr_in *sock_addr, uint32_t ip, uint16_t port)
     sock_addr->sin_family = AF_INET;
     sock_addr->sin_addr.s_addr = ip;
     sock_addr->sin_port = port;
+
+}
+
+void resolve_sockaddr(struct sockaddr_in *sock_addr, char * ip, int len, uint16_t *port)
+{
+	inet_ntop(AF_INET, &(sock_addr->sin_addr),
+                             ip, len);
+    *port = ntohs(sock_addr->sin_port);
 
 }
 

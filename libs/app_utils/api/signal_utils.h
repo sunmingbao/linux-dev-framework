@@ -10,6 +10,8 @@
 
 #ifndef  __SIGNAL_UTILS_H__
 #define  __SIGNAL_UTILS_H__
+#include <signal.h>
+
 #define     RT_SIG_FOR_APP_MIN    (SIGRTMIN+10)
 #define     RT_SIG_FOR_APP_MAX    (SIGRTMAX-10)
 int get_a_free_sig_and_register_proc(void *sig_handler);

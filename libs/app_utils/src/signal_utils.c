@@ -9,7 +9,6 @@
  */
 
 #include <pthread.h>
-#include <signal.h>
 #include "signal_utils.h"
 #include "debug.h"
 
