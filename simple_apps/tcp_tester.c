@@ -68,7 +68,7 @@ typedef struct
 {
     uint64_t rx_times_total;
     uint64_t rx_times_fail;
-    uint64_t rx_pkts;
+    uint64_t rx_times_succ;
     uint64_t rx_bytes;
 	
 
@@ -85,7 +85,7 @@ static const char *stat_item_names[] =
 {
 	"rx_times_total",
 	"rx_times_fail",
-	"rx_pkts",
+	"rx_times_succ",
 	"rx_bytes",
 	
 	"tx_pkts_total",
@@ -212,9 +212,6 @@ static void parse_args(int argc, char *argv[])
 static void rx_loop()
 {
     int ret;
-	struct sockaddr_in  peer_addr;
-    char peer_ip[32];
-	uint16_t peer_port;
 	
 	while (!the_working_paras.need_exit)
 	{
@@ -227,25 +224,21 @@ static void rx_loop()
 			continue;
     	}
 
-        ret=udp_socket_recvfrom(the_working_paras.sockfd
+        ret=read(the_working_paras.sockfd
 			,the_working_paras.buf
-			,sizeof(the_working_paras.buf)
-			,&peer_addr);
+			,sizeof(the_working_paras.buf));
 		INC_STAT(the_stat_data.rx_times_total);
 
 		if (ret>0)
 		{
-			INC_STAT(the_stat_data.rx_pkts);
+			INC_STAT(the_stat_data.rx_times_succ);
 			INC_STAT_VALUE(the_stat_data.rx_bytes, ret);
 
 			if (!the_working_paras.no_verbose)
 			{
-			    resolve_sockaddr(&peer_addr, peer_ip, sizeof(peer_ip), &peer_port);
-			    printf("[%"PRIu64"]got %d bytes from %s:%d\n"
-					,the_stat_data.rx_pkts
-					,ret
-					,peer_ip
-					,(int)peer_port);
+			    printf("[%"PRIu64"]got %d bytes\n"
+					,the_stat_data.rx_times_succ
+					,ret);
 
                 if (!the_working_paras.no_prt_pkt)
             	{
@@ -254,13 +247,6 @@ static void rx_loop()
             	}
 			}
 
-			if (!sockaddr_equal(&peer_addr, &the_working_paras.dst_sock_addr))
-			{
-			    DBG_PRINT("received data from wrong host");
-
-			}
-			
-
 		}
 		else
 		{
@@ -268,6 +254,8 @@ static void rx_loop()
 
 			if (!the_working_paras.no_verbose)
 			    ERR_DBG_PRINT("rx failed");
+
+			break;
 		}
 		
 		printf("\n\n");
@@ -301,28 +289,27 @@ static void sig_handler(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
 				,(int)the_working_paras.dst_port);
 
 		}
-		ret=udp_socket_sendto(the_working_paras.sockfd
+		ret=write_certain_bytes(the_working_paras.sockfd
 			, the_working_paras.snd_buf
-			, the_working_paras.snd_data_len
-			, &the_working_paras.dst_sock_addr);
+			, the_working_paras.snd_data_len);
 
-		if (ret==the_working_paras.snd_data_len)
+		if (0==ret)
 		{
 			INC_STAT(the_stat_data.tx_pkts_succ);
 			INC_STAT_VALUE(the_stat_data.tx_bytes_succ, the_working_paras.snd_data_len);
 		}
-		else if (ret<=0)
+		else
 		{
 			INC_STAT(the_stat_data.tx_pkts_fail);
 			INC_STAT_VALUE(the_stat_data.tx_bytes_fail, the_working_paras.snd_data_len);
 
 			if (!the_working_paras.no_verbose)
 				ERR_DBG_PRINT("tx failed");
+			
+			the_working_paras.need_exit = 1;
+			alarm(0);
 
 		}
-		else
-			DBG_PRINT_QUIT("abnormal event: udp packet was partly sent!");
-
 
 	}
 }
@@ -331,6 +318,34 @@ static void sig_handler(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
 static void show_stats()
 {
 	print_stats(1, (void *)(&the_stat_data), stat_item_names, ARRAY_SIZE(stat_item_names));
+}
+
+static void connect2dst()
+{
+    int ret;
+	if (the_working_paras.src_ip)
+        the_working_paras.sockfd = tcp_socket_init(the_working_paras.src_ip, the_working_paras.src_port);
+	else
+		the_working_paras.sockfd = tcp_socket_init_no_addr();
+	
+	if (the_working_paras.sockfd<0)
+	{
+	    ERR_DBG_PRINT_QUIT("create socket on %s:%d failed ", the_working_paras.src_ip, (int)the_working_paras.src_port);
+	}
+
+	
+    make_sockaddr(&the_working_paras.dst_sock_addr, inet_addr(the_working_paras.dst_ip), htons(the_working_paras.dst_port));
+	ret=connect(the_working_paras.sockfd
+		,(void *)&the_working_paras.dst_sock_addr
+		,sizeof(struct sockaddr_in));
+	if (ret<0)
+	{
+	    ERR_DBG_PRINT_QUIT("connect to %s:%d failed ", the_working_paras.dst_ip, (int)the_working_paras.dst_port);
+	}
+
+    set_fd_nonblock(the_working_paras.sockfd);
+	DBG_PRINT("connect to %s:%d succeed!", the_working_paras.dst_ip, (int)the_working_paras.dst_port);
+
 }
 
 int main(int argc, char *argv[])
@@ -350,20 +365,7 @@ int main(int argc, char *argv[])
 BIND_CPU_OK:
 	register_sig_proc(SIGINT, sig_handler);
 	register_sig_proc(SIGALRM, sig_handler);
-
-	if (the_working_paras.src_ip)
-        the_working_paras.sockfd = udp_socket_init(the_working_paras.src_ip, the_working_paras.src_port);
-	else
-		the_working_paras.sockfd = udp_socket_init_no_addr();
-	
-	if (the_working_paras.sockfd<0)
-	{
-	    ERR_DBG_PRINT_QUIT("create socket on %s:%d failed ", the_working_paras.src_ip, (int)the_working_paras.src_port);
-	}
-
-	set_fd_nonblock(the_working_paras.sockfd);
-	
-    make_sockaddr(&the_working_paras.dst_sock_addr, inet_addr(the_working_paras.dst_ip), htons(the_working_paras.dst_port));
+    connect2dst();
 	alarm(the_working_paras.snd_interval);
 
 	rx_loop();

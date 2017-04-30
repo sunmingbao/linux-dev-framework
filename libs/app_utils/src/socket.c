@@ -84,6 +84,9 @@ int socket_init_2(int type, struct sockaddr_in *sock_addr)
         ErrSysLog("create socket failed");
         return -1;
     }
+
+	if (!sock_addr)
+		goto EXIT;
     
     set_useful_sock_opt(sockfd);
     
@@ -95,6 +98,8 @@ int socket_init_2(int type, struct sockaddr_in *sock_addr)
     }
 
     SysLog("bind socket to %s:%d succeed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
+
+EXIT:
     return sockfd;
 
 }
@@ -120,6 +125,17 @@ int tcp_socket_init(const char *ipstr, uint16_t port)
 {
     return socket_init(SOCK_STREAM, ipstr, port);
 }
+
+int udp_socket_init_no_addr()
+{
+    return socket_init_2(SOCK_DGRAM, NULL);
+}
+
+int tcp_socket_init_no_addr()
+{
+    return socket_init_2(SOCK_STREAM, NULL);
+}
+
 
 int udp_socket_recvfrom(int sockfd, void *buf, int buf_size, struct sockaddr_in *peer_addr)
 {

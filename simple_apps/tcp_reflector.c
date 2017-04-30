@@ -26,27 +26,22 @@ typedef struct
 	uint8_t cpu_idx;
 	const char *src_ip;
 	uint16_t    src_port;
-	const char *dst_ip;
-	uint16_t    dst_port;
-	struct sockaddr_in  dst_sock_addr;
 	int enable_perf;
 	int no_prt_pkt;
-	int snd_interval;
-	int snd_data_len;
+	int only_recv;
 	int need_exit;
+	int sockfd_listen;
 	int sockfd;
     char buf[65536];
-	char snd_buf[65536];
 
 } t_working_paras;
 
-#define    MAX_SND_DATA_LEN    (65535-20-8)
 static t_working_paras the_working_paras = 
 {
 	.cpu_idx = -1,
-	.snd_interval = 1,
-	.snd_data_len = 8,
-	.snd_buf = {'1', '2', '3', '4', '5', 'a', 'b', 'c'},
+	.sockfd = -1, 
+	.src_ip  = "0.0.0.0",
+	.src_port= 5555,
 	
 		
 };
@@ -56,19 +51,16 @@ static t_working_paras the_working_paras =
 #define    LONG_OPT_ID_BIND_TO_CPU           (1002)
 #define    LONG_OPT_ID_SRC_IP                (1003)
 #define    LONG_OPT_ID_SRC_PORT              (1004)
-#define    LONG_OPT_ID_SND_INTERVAL          (1005)
+#define    LONG_OPT_ID_ONLY_RECV             (1005)
 #define    LONG_OPT_ID_ENABLE_PERF           (1006)
 #define    LONG_OPT_ID_NO_PRINT_PKT          (1007)
-#define    LONG_OPT_ID_DST_IP                (1008)
-#define    LONG_OPT_ID_DST_PORT              (1009)
-#define    LONG_OPT_ID_SND_DATA_LEN          (1010)
 
 
 typedef struct
 {
     uint64_t rx_times_total;
     uint64_t rx_times_fail;
-    uint64_t rx_pkts;
+    uint64_t rx_times_succ;
     uint64_t rx_bytes;
 	
 
@@ -85,7 +77,7 @@ static const char *stat_item_names[] =
 {
 	"rx_times_total",
 	"rx_times_fail",
-	"rx_pkts",
+	"rx_times_succ",
 	"rx_bytes",
 	
 	"tx_pkts_total",
@@ -109,35 +101,12 @@ static struct option my_options[] =
     {"bind-to-cpu",  required_argument, NULL, LONG_OPT_ID_BIND_TO_CPU},
     {"src-ip",       required_argument, NULL, LONG_OPT_ID_SRC_IP},
     {"src-port",     required_argument, NULL, LONG_OPT_ID_SRC_PORT},
-    {"snd-interval", required_argument, NULL, LONG_OPT_ID_SND_INTERVAL},
+    {"only-recv",    no_argument,       NULL, LONG_OPT_ID_ONLY_RECV},
     {"enable-perf",  no_argument,       NULL, LONG_OPT_ID_ENABLE_PERF},
     {"no-print-pkt", no_argument,       NULL, LONG_OPT_ID_NO_PRINT_PKT},
-	{"dst-ip",		 required_argument, NULL, LONG_OPT_ID_DST_IP},
-	{"dst-port",	 required_argument, NULL, LONG_OPT_ID_DST_PORT},
-	{"snd-data-len", required_argument, NULL, LONG_OPT_ID_SND_DATA_LEN},
-
     {0},
 };
 
-
-static void args_post_proc()
-{
-    if (the_working_paras.enable_perf)
-	{
-		DBG_PRINT("Perf enabled. All printf in rxtx will be shutdown");
-		the_working_paras.no_verbose = 1;
-		the_working_paras.no_prt_pkt = 1;
-
-	}
-
-	if (!the_working_paras.dst_ip || !the_working_paras.dst_port)
-	{
-
-	    DBG_PRINT_QUIT("--dst-ip  and --dst-port must be provided.");
-
-	}
-
-}
 
 static void parse_args(int argc, char *argv[])
 {
@@ -155,14 +124,6 @@ static void parse_args(int argc, char *argv[])
                the_working_paras.src_ip = optarg;
                break;
 
-           case LONG_OPT_ID_DST_PORT: 
-               the_working_paras.dst_port = strtoul(optarg, NULL, 0);
-               break;
-               
-           case LONG_OPT_ID_DST_IP: 
-               the_working_paras.dst_ip = optarg;
-               break;
-
            case LONG_OPT_ID_NO_VERBOSE:
                the_working_paras.no_verbose = 1;
 			   DBG_PRINT("no verbose enabled");
@@ -173,14 +134,9 @@ static void parse_args(int argc, char *argv[])
 			   DBG_PRINT("packet contents will not be printed");
                break;
 
-           case LONG_OPT_ID_SND_INTERVAL:
-               the_working_paras.snd_interval = strtoul(optarg, NULL, 0);
-			   DBG_PRINT("send interval %d seconds", the_working_paras.snd_interval);
-               break;
-
-           case LONG_OPT_ID_SND_DATA_LEN:
-               the_working_paras.snd_data_len = strtoul(optarg, NULL, 0);
-			   DBG_PRINT("send data len %d bytes", the_working_paras.snd_data_len);
+           case LONG_OPT_ID_ONLY_RECV:
+               the_working_paras.only_recv= 1;
+			   DBG_PRINT("only receive enabled");
                break;
 
            case LONG_OPT_ID_ENABLE_PERF:
@@ -198,24 +154,26 @@ static void parse_args(int argc, char *argv[])
 		   case LONG_OPT_ID_HELP:
            default: /* '?' */
                print_usage(argv[0]
-			   	, "<--dst-ip=xxx>  <--dst-port=xxx> [--no-verbose] [--bind-to-cpu=x]"
+			   	, "[--src-ip=xxx]  [--src-port=xxx] [--no-verbose] [--bind-to-cpu=x]"
 			   	, my_options
 			   	, ARRAY_SIZE(my_options)-1);
 			   exit(0);
        }
     }
 
-    args_post_proc();
+    if (the_working_paras.enable_perf)
+	{
+		DBG_PRINT("Perf enabled. All printf in rxtx will be shutdown");
+		the_working_paras.no_verbose = 1;
+		the_working_paras.no_prt_pkt = 1;
+
+	}
 }
 
 
-static void rx_loop()
+static void rxtx_loop()
 {
-    int ret;
-	struct sockaddr_in  peer_addr;
-    char peer_ip[32];
-	uint16_t peer_port;
-	
+    int ret, send_ret;
 	while (!the_working_paras.need_exit)
 	{
 	    ret=fd_readable(the_working_paras.sockfd, 0, 10000);
@@ -227,39 +185,55 @@ static void rx_loop()
 			continue;
     	}
 
-        ret=udp_socket_recvfrom(the_working_paras.sockfd
+        ret=read(the_working_paras.sockfd
 			,the_working_paras.buf
-			,sizeof(the_working_paras.buf)
-			,&peer_addr);
+			,sizeof(the_working_paras.buf));
 		INC_STAT(the_stat_data.rx_times_total);
 
 		if (ret>0)
 		{
-			INC_STAT(the_stat_data.rx_pkts);
+			INC_STAT(the_stat_data.rx_times_succ);
 			INC_STAT_VALUE(the_stat_data.rx_bytes, ret);
 
 			if (!the_working_paras.no_verbose)
 			{
-			    resolve_sockaddr(&peer_addr, peer_ip, sizeof(peer_ip), &peer_port);
-			    printf("[%"PRIu64"]got %d bytes from %s:%d\n"
-					,the_stat_data.rx_pkts
-					,ret
-					,peer_ip
-					,(int)peer_port);
-
+                printf("[%"PRIu64"]got %d bytes from peer\n"
+					,the_stat_data.rx_times_succ
+						,ret);
                 if (!the_working_paras.no_prt_pkt)
             	{
 					printf("the data contents is:\n");
 					print_mem(the_working_paras.buf, ret);
             	}
 			}
-
-			if (!sockaddr_equal(&peer_addr, &the_working_paras.dst_sock_addr))
-			{
-			    DBG_PRINT("received data from wrong host");
-
-			}
 			
+			if (!the_working_paras.only_recv)
+			{
+				if (!the_working_paras.no_verbose)
+				{
+				    printf("try send back %d bytes\n"
+						,ret);
+
+				}
+			    send_ret=write_certain_bytes(the_working_paras.sockfd, the_working_paras.buf, ret);
+				INC_STAT(the_stat_data.tx_pkts_total);
+				INC_STAT_VALUE(the_stat_data.tx_bytes_total, ret);
+
+				if (0==send_ret)
+				{
+				    INC_STAT(the_stat_data.tx_pkts_succ);
+			        INC_STAT_VALUE(the_stat_data.tx_bytes_succ, ret);
+				}
+				else
+				{
+				    INC_STAT(the_stat_data.tx_pkts_fail);
+			        INC_STAT_VALUE(the_stat_data.tx_bytes_fail, ret);
+
+					if (!the_working_paras.no_verbose)
+					    ERR_DBG_PRINT("tx failed");
+
+				}
+			}
 
 		}
 		else
@@ -268,8 +242,10 @@ static void rx_loop()
 
 			if (!the_working_paras.no_verbose)
 			    ERR_DBG_PRINT("rx failed");
+
+			break;
 		}
-		
+
 		printf("\n\n");
 		continue;
 
@@ -279,58 +255,63 @@ static void rx_loop()
 
 static void sig_handler(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
 {
-    int ret;
     if (SIGINT==sig_no)
-	{
 		the_working_paras.need_exit = 1;
-		alarm(0);
-	}
-	else if (SIGALRM==sig_no)
-	{
-	    alarm(the_working_paras.snd_interval);
-		
-		INC_STAT(the_stat_data.tx_pkts_total);
-		INC_STAT_VALUE(the_stat_data.tx_bytes_total, the_working_paras.snd_data_len);
-
-		if (!the_working_paras.no_verbose)
-		{
-			printf("[%"PRIu64"]try send %d bytes to %s:%d\n"
-				,the_stat_data.tx_pkts_total
-				,the_working_paras.snd_data_len
-				,the_working_paras.dst_ip
-				,(int)the_working_paras.dst_port);
-
-		}
-		ret=udp_socket_sendto(the_working_paras.sockfd
-			, the_working_paras.snd_buf
-			, the_working_paras.snd_data_len
-			, &the_working_paras.dst_sock_addr);
-
-		if (ret==the_working_paras.snd_data_len)
-		{
-			INC_STAT(the_stat_data.tx_pkts_succ);
-			INC_STAT_VALUE(the_stat_data.tx_bytes_succ, the_working_paras.snd_data_len);
-		}
-		else if (ret<=0)
-		{
-			INC_STAT(the_stat_data.tx_pkts_fail);
-			INC_STAT_VALUE(the_stat_data.tx_bytes_fail, the_working_paras.snd_data_len);
-
-			if (!the_working_paras.no_verbose)
-				ERR_DBG_PRINT("tx failed");
-
-		}
-		else
-			DBG_PRINT_QUIT("abnormal event: udp packet was partly sent!");
-
-
-	}
 }
 
 
 static void show_stats()
 {
 	print_stats(1, (void *)(&the_stat_data), stat_item_names, ARRAY_SIZE(stat_item_names));
+}
+
+
+static void make_conn()
+{
+    int ret, conn_fd;
+	
+	struct sockaddr_in  peer_addr;
+	
+	socklen_t addr_len = sizeof(peer_addr);
+	
+    char peer_ip[32];
+	uint16_t peer_port;
+
+    the_working_paras.sockfd_listen = tcp_socket_init(the_working_paras.src_ip, the_working_paras.src_port);
+	if (the_working_paras.sockfd_listen<0)
+	{
+	    ERR_DBG_PRINT_QUIT("create server socket on %s:%d failed ", the_working_paras.src_ip, (int)the_working_paras.src_port);
+	}
+
+	ret=listen(the_working_paras.sockfd_listen, 5);
+	if (ret)
+		ERR_DBG_PRINT_QUIT("listen on socket failed ");
+
+    while (-1 == the_working_paras.sockfd)
+	{
+	    conn_fd =  accept(the_working_paras.sockfd_listen
+			, (void *)&peer_addr
+			, &addr_len);
+		if (conn_fd<0)
+		{
+		    if (EINTR==errno)
+				continue;
+			
+			ERR_DBG_PRINT_QUIT("accept failed ");
+		}
+
+		the_working_paras.sockfd = conn_fd;
+
+	}
+
+	set_fd_nonblock(the_working_paras.sockfd);
+	close(the_working_paras.sockfd_listen);
+
+resolve_sockaddr(&peer_addr, peer_ip, sizeof(peer_ip), &peer_port);
+printf("client from %s:%d connected. and we only accept one client\n"
+	,peer_ip
+	,(int)peer_port);
+
 }
 
 int main(int argc, char *argv[])
@@ -349,24 +330,8 @@ int main(int argc, char *argv[])
 
 BIND_CPU_OK:
 	register_sig_proc(SIGINT, sig_handler);
-	register_sig_proc(SIGALRM, sig_handler);
-
-	if (the_working_paras.src_ip)
-        the_working_paras.sockfd = udp_socket_init(the_working_paras.src_ip, the_working_paras.src_port);
-	else
-		the_working_paras.sockfd = udp_socket_init_no_addr();
-	
-	if (the_working_paras.sockfd<0)
-	{
-	    ERR_DBG_PRINT_QUIT("create socket on %s:%d failed ", the_working_paras.src_ip, (int)the_working_paras.src_port);
-	}
-
-	set_fd_nonblock(the_working_paras.sockfd);
-	
-    make_sockaddr(&the_working_paras.dst_sock_addr, inet_addr(the_working_paras.dst_ip), htons(the_working_paras.dst_port));
-	alarm(the_working_paras.snd_interval);
-
-	rx_loop();
+    make_conn();
+	rxtx_loop();
 	show_stats();
     return 0;
 }
