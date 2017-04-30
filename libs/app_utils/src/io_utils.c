@@ -19,33 +19,31 @@
 
 int fd_read_or_write_able(int fd, int sec, int usec, int test_read)
 {
-    fd_set fds;
+    fd_set fds, fds_except;
     struct timeval tv;
     int retval;
 
     FD_ZERO(&fds);
     FD_SET(fd, &fds);
 
+    FD_ZERO(&fds_except);
+    FD_SET(fd, &fds_except);
+
     tv.tv_sec = sec;
     tv.tv_usec = usec;
 
     if (test_read)
-        retval = select(fd + 1, &fds, NULL, NULL, &tv);
+        retval = select(fd + 1, &fds, NULL, &fds_except, &tv);
     else
-        retval = select(fd + 1, NULL, &fds, NULL, &tv);
+        retval = select(fd + 1, NULL, &fds, &fds_except, &tv);
 
     if (retval == -1)
     {
        if (EINTR==errno) return 0;
-       return 1;
+       return retval;
     }
     
-    if (retval)
-    {
-        return 1;
-    }
-
-    return 0;
+    return retval>0;
 }
 
 int fd_readable(int fd, int sec, int usec)
