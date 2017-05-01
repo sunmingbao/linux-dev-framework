@@ -28,6 +28,7 @@ int set_tty_input_to_raw_mode()
    tcgetattr(0, &old_tty_cfg); 
    new_tty_cfg = old_tty_cfg;
    new_tty_cfg.c_lflag &= ((~ICANON)); 
+   new_tty_cfg.c_lflag &= (~(ECHO|ECHOE|ECHOK|ECHONL)); 
       tcflush(0, TCIOFLUSH);     
       if  (tcsetattr(0, TCSANOW, &new_tty_cfg)) {        
         ERR_DBG_PRINT("tcsetattr failed");  
