@@ -9,13 +9,13 @@
  */
 
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/select.h>
 #include <stdarg.h>
 #include <errno.h>
-#include "debug.h"
 
 int fd_read_or_write_able(int fd, int sec, int usec, int test_read)
 {

@@ -12,7 +12,6 @@
 #define  __STRING_UTILS_H__
 
 #include <string.h>
-#include   "defs.h"
 
 int str_trim(char *output, char * input);
 int str_trim_len(char *output, char * input, int len);

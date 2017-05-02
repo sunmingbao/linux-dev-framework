@@ -105,59 +105,6 @@ static void move_cursor_right()
 	the_edit_ctx.cur_col++;
 }
 
-static void virtual_key_input_proc(uint8_t *input, int len)
-{
-	if (0x1b != input[0])
-	    ERR_DBG_PRINT_QUIT("what's going on? virtual key input[0]==0x%02hhx", input[0]);
-
-    if (0x5b==input[1])
-	{
-	    switch (input[2])
-    	{
-    	    case 0x41:  /* up */
-				
-				move_cursor_up();
-				break;
-
-			case 0x42:	/* down */
-				move_cursor_down();
-				break;
-
-		    case 0x44:  /* left*/
-				move_cursor_left();
-				break;
-
-		    case 0x43:  /* right */
-				move_cursor_right();
-				break;
-
-    	}
-
-	}
-	else if (0x4f==input[1])
-	{
-		switch (input[2])
-		{
-			case 0x50:	/* f1 */
-				break;
-
-			case 0x51:	/* f2 */
-				break;
-
-			case 0x52:	/* f3*/
-				break;
-
-			case 0x53:	/* f4 */
-				break;
-
-		}
-	
-	}
-
-	
-}
-
-
 static void backspace_proc()
 {
 	int cur_line = the_edit_ctx.cur_line;
@@ -206,6 +153,65 @@ static void delete_proc()
 
 }
 
+static void virtual_key_input_proc(uint8_t *input, int len)
+{
+	if (0x1b != input[0])
+	    ERR_DBG_PRINT_QUIT("what's going on? virtual key input[0]==0x%02hhx", input[0]);
+
+    if (0x5b==input[1])
+	{
+	    switch (input[2])
+    	{
+    	    case 0x41:  /* up */
+				
+				move_cursor_up();
+				break;
+
+			case 0x42:	/* down */
+				move_cursor_down();
+				break;
+
+		    case 0x44:  /* left*/
+				move_cursor_left();
+				break;
+
+		    case 0x43:  /* right */
+				move_cursor_right();
+				break;
+
+			case 0x33:
+				if (0x7e==input[3]) //delete pressed in gui
+					delete_proc();
+				break;
+
+    	}
+
+	}
+	else if (0x4f==input[1])
+	{
+		switch (input[2])
+		{
+			case 0x50:	/* f1 */
+				break;
+
+			case 0x51:	/* f2 */
+				break;
+
+			case 0x52:	/* f3*/
+				break;
+
+			case 0x53:	/* f4 */
+				break;
+
+		}
+	
+	}
+
+	
+}
+
+
+
 
 static void special_key_input_proc(uint8_t c)
 {
@@ -224,8 +230,9 @@ static void special_key_input_proc(uint8_t c)
 		    backspace_proc();
 			break;
 
-		case 0x7f:	//delete pressed
-		    delete_proc();
+		case 0x7f:	//delete pressed or backspace pressed in gui
+		    //delete_proc();
+			backspace_proc();
 			break;
 
 	}
@@ -264,7 +271,8 @@ static void input_proc(uint8_t *input, int len)
 
 	return;
 #endif
-    if (3 == len)
+
+    if (len>=3)
 		goto VIRTUAL_KEY_PROC;
 
 	if (1 != len)
@@ -288,7 +296,7 @@ exit:
 static void input_proc_loop()
 {
 	int ret;
-	uint8_t input[3];
+	uint8_t input[4];
     while (1)
 	{
 	    ret=read_reliable(0, input, sizeof(input));

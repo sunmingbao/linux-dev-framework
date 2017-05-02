@@ -22,6 +22,7 @@
 #include <sys/wait.h>
 #include <sys/vfs.h>
 #include <time.h>
+#include "defs.h"
 #include "debug.h"
 #include "misc_utils.h"
 #include "log.h"

@@ -1,8 +1,8 @@
 
-	linux-dev-framework v2.0.8
+	linux-dev-framework v2.0.9
 
 发布日期：2017/05/02
 
 更新内容：
 
-    新增了vi风格的文本编辑示例代码，同时对源码进行了完善。
+    对源码进行了完善。

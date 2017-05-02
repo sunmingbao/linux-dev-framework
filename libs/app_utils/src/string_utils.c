@@ -15,8 +15,6 @@
 #include <ctype.h>
 
 #include "string_utils.h"
-#include "debug.h"
-#include "log.h"
 
 int str_trim_len(char *output, char * input, int len)
 {
