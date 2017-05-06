@@ -33,6 +33,8 @@
 #define SHOW_CURSOR() do { printf("\033[?25h") ; fflush(stdout); } while (0)
 #define HIGHT_LIGHT() do { printf("\033[7m")
 #define UN_HIGHT_LIGHT() do { printf("\033[27m"); fflush(stdout); } while (0)
+#define PUSH_SCREEN() do { printf("\033[?1049h\033[H"); fflush(stdout); } while (0)
+#define POP_SCREEN() do { printf("\033[?1049l"); fflush(stdout); } while (0)
 
 /* 下面是更多的信息 */
 #if 0

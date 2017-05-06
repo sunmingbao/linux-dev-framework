@@ -12,6 +12,14 @@
 #define  __IO_UTILS_H__
 
 #include <unistd.h>
+#include <stdio.h>
+
+#define    RT_PRINT(fmt, args...) \
+    do \
+    { \
+        printf(fmt, ##args); \
+        fflush(stdout); \
+    } while (0)
 
 int fd_readable(int fd, int sec, int usec);
 int fd_writeable(int fd, int sec, int usec);

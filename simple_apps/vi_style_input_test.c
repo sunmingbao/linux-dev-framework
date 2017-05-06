@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "io_utils.h"
+#include "signal_utils.h"
 #include "tty_cfg.h"
 #include "screen_ops.h"
 #include "string_utils.h"
@@ -18,6 +19,8 @@
 
 #define MAX_LINE_LEN    (60)
 #define MAX_LINE_NR    (10)
+
+#define INPUT_BUF_LEN    (8)
 
 static char empty_line[MAX_LINE_LEN+1] = { [0 ... MAX_LINE_LEN-1] =  ' ',};
 typedef struct
@@ -103,6 +106,19 @@ static void move_cursor_right()
 	
 	MOVE_CURSOR_RIGHT(1);
 	the_edit_ctx.cur_col++;
+}
+
+static int need_exit;
+static void sig_handler(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
+{
+    need_exit = 1;
+}
+
+static void ignore_all_sig()
+{
+    int i;
+	for (i=0; i<=SIGRTMAX; i++)
+		ignore_sig(i);
 }
 
 static void backspace_proc()
@@ -220,6 +236,7 @@ static void special_key_input_proc(uint8_t c)
 	{
 
 	    case 0x1b:  //esc pressed
+	        need_exit = 1;
 			break;
 			
 		case 0x0a:	//enter pressed
@@ -267,7 +284,11 @@ static void input_proc(uint8_t *input, int len)
 
     DBG_PRINT("len=%d", len);
 	for (i=0; i<len; i++)
-	    DBG_PRINT("%02hhx", input[i]);
+	{
+	    RT_PRINT("0x%02hhx ", input[i]);
+	}
+
+	RT_PRINT("\n");
 
 	return;
 #endif
@@ -293,15 +314,17 @@ exit:
     return;
 }
 
+
 static void input_proc_loop()
 {
 	int ret;
-	uint8_t input[4];
-    while (1)
+	uint8_t  input[INPUT_BUF_LEN];
+	
+    while (!need_exit)
 	{
-	    ret=read_reliable(0, input, sizeof(input));
+	    ret=read(0, input, sizeof(input));
 		if (ret<0)
-			ERR_DBG_PRINT_QUIT("read input failed");
+			continue;
 
 		if (ret>0)
 			input_proc(input, ret);
@@ -309,12 +332,22 @@ static void input_proc_loop()
 	}
 }
 
+
 int main(int argc, char *argv[])
 {
+	PUSH_SCREEN();
     set_tty_input_to_raw_mode();
+
+	ignore_all_sig();
+	register_sig_proc(SIGINT, sig_handler);
+
 	CLEAR_SCREEN();
 	MOVE_CURSOR_TO(0,0);
+	
 	input_proc_loop();
+
+	restore_tty_input_mode();
+	POP_SCREEN();
     return 0;
 }
 
