@@ -21,7 +21,7 @@ void static add_test()
 	int i;
 	for (i=0; i<MAX_ADD_ENTRY_NUM+2; i++)
 	{
-	    if (tab_xxx_add_entry(a, b, c, i))
+	    if (tab_xxx_add_entry(a, b, c, i)<0)
     	{
     	    ERR_DBG_PRINT("a=%d; b=%d; c=%d; i=%d", a, b, c, i);
 

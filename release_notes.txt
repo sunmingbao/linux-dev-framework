@@ -1,8 +1,8 @@
 
-	linux-dev-framework v2.0.13
+	linux-dev-framework v2.0.14
 
 发布日期：2017/05/16
 
 更新内容：
 
-    完善内核开发快速开始代码。
+    完善表管理代码。

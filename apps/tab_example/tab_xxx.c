@@ -33,7 +33,7 @@ typedef struct
 
 static t_xxx_tab the_tab_xxx;
 
-static uint32_t id_hash(uint32_t id)
+static uint32_t id_hash(uint16_t id)
 {
     return id % MAX_HASH_LINE_NUM;
 }
@@ -43,7 +43,7 @@ static uint32_t key_hash(uint32_t a, uint32_t b, uint32_t c)
     return (a*b*c) % MAX_HASH_LINE_NUM;
 }
 
-static void *search_entry_by_id_in_link(struct list_head   *head, uint32_t id)
+static void *search_entry_by_id_in_link(struct list_head   *head, uint16_t id)
 {
 	t_tab_xxx_entry *pt_entry;
 	struct list_head *pos;
@@ -61,7 +61,7 @@ static void *search_entry_by_id_in_link(struct list_head   *head, uint32_t id)
     return NULL;
 }
 
-static void *search_entry_by_id(uint32_t id)
+static void *search_entry_by_id(uint16_t id)
 {
 	int line = id_hash(id);
 	
@@ -74,16 +74,29 @@ static void *search_entry_by_id(uint32_t id)
     return pt_entry;
 }
 
-static uint32_t gen_id()
+#define    MIN_ENTRY_ID    (1)
+#define    MAX_ENTRY_ID    (65535)
+
+static uint16_t gen_id()
 {
-    static     uint32_t     id_src = 1;
+    static     uint16_t     next_id = MIN_ENTRY_ID;
+	uint16_t     ret;
 	
-	while (search_entry_by_id(id_src)!=NULL)
+	while (search_entry_by_id(next_id))
 	{
-		id_src++;
+		next_id++;
+		
+		if (next_id>MAX_ENTRY_ID)
+			next_id = MIN_ENTRY_ID;
 	}
 
-	return id_src;
+    ret = next_id;
+
+	next_id++;
+		
+	if (next_id>MAX_ENTRY_ID)
+		next_id = MIN_ENTRY_ID;
+	return ret;
 }
 
 static void *search_entry_by_key_in_link(struct list_head   *head, uint32_t a, uint32_t b, uint32_t c)
@@ -276,6 +289,7 @@ int tab_xxx_add_entry(uint32_t a, uint32_t b, uint32_t c, uint32_t priv_data)
 
 	build_new_entry(pt_entry, a, b, c, priv_data);
     add_entry_into_tab(pt_entry);
+	ret = pt_entry->id;
 
 EXIT:
 	pthread_spin_unlock(&(the_tab_xxx.add_del_lock));
@@ -298,6 +312,24 @@ void * tab_xxx_get_entry_by_key(uint32_t a, uint32_t b, uint32_t c)
 
 	return pt_entry;
 }
+
+void * tab_xxx_get_entry_by_id(uint16_t id)
+{
+	int line = id_hash(id);
+	
+	t_tab_xxx_entry *pt_entry;
+
+	pthread_spin_lock(&(the_tab_xxx.hash_line_lock_by_id[line]));
+	pt_entry = search_entry_by_id_in_link(&(the_tab_xxx.hash_tab_by_id[line]), id);
+	if (pt_entry)
+	{
+		inc_entry_ref_cnt(pt_entry);
+	}
+	pthread_spin_unlock(&(the_tab_xxx.hash_line_lock_by_id[line]));
+
+	return pt_entry;
+}
+
 
 void   tab_xxx_put(t_tab_xxx_entry *pt_entry)
 {
