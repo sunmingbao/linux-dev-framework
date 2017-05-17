@@ -1,3 +1,13 @@
+/* 
+ * 本软件为免费、开源软件。
+ * 本软件的版权(包括源码及二进制发布版本)归一切公众所有。
+ * 您可以自由使用、传播本软件。
+ * 您也可以以任何形式、任何目的使用本软件(包括源码及二进制发布版本)，而不受任何版权限制。
+ * =====================
+ * 作者: 孙明保
+ * 邮箱: sunmingbao@126.com
+ */
+
 #include <errno.h>
 #include "tab_xxx.h"
 #include "debug.h"
@@ -8,7 +18,7 @@
 typedef struct
 {
 #if 1
-    /* we use mm to manage free entry */
+    /* we use external code to manage free entry */
     MM_HANDLE mem_pool;
 #else
 	uint32_t		   free_entry_num;
@@ -257,12 +267,15 @@ static void inc_entry_ref_cnt(t_tab_xxx_entry *pt_entry)
 
 }
 
-static void dec_entry_ref_cnt(t_tab_xxx_entry *pt_entry)
+static uint32_t dec_entry_ref_cnt(t_tab_xxx_entry *pt_entry)
 {
+    uint32_t ret;
 	pthread_spin_lock(&(pt_entry->lock));
 	pt_entry->ref_cnt--;
+	ret = pt_entry->ref_cnt;
 	pthread_spin_unlock(&(pt_entry->lock));
 
+    return ret;
 }
 
 int tab_xxx_add_entry(uint32_t a, uint32_t b, uint32_t c, uint32_t priv_data)
@@ -333,9 +346,9 @@ void * tab_xxx_get_entry_by_id(uint16_t id)
 
 void   tab_xxx_put(t_tab_xxx_entry *pt_entry)
 {
-    dec_entry_ref_cnt(pt_entry);
+    uint32_t ret = dec_entry_ref_cnt(pt_entry);
 	
-	if (0==pt_entry->ref_cnt)
+	if (0 == ret)
 	{
 	    /* everything needed for delete has been done, except free buffer */
 		free_buffer(the_tab_xxx.mem_pool, pt_entry);
@@ -391,7 +404,7 @@ void tab_xxx_dump_all_entry()
 	list_for_each(pos, head)
 	{
 		pt_entry = list_entry(pos, t_tab_xxx_entry, all);
-		DBG_PRINT("id=%u", pt_entry->id);
+		printf("id=%hu", pt_entry->id);
 
 	}
 	pthread_spin_unlock(&(the_tab_xxx.add_del_lock));
