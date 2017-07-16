@@ -38,6 +38,7 @@ int sig_has_no_handler(int sig)
 int register_sig_proc(int sig, void *sig_handler)
 {
     struct sigaction sa;
+	memset(&sa, 0, sizeof(struct sigaction));
     sigemptyset(&sa.sa_mask);;
     sa.sa_sigaction = sig_handler;
     sa.sa_flags = SA_SIGINFO;

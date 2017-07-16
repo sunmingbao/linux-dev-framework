@@ -11,6 +11,7 @@
 #ifndef  __SYS_UTILS_H__
 #define  __SYS_UTILS_H__
 #include <stdint.h>
+#include <pthread.h>
 
 #if defined( __i386) || defined( __x86_64)
 static inline uint64_t rdtsc()
@@ -31,8 +32,11 @@ static inline uint64_t rdtsc()
 #endif
 
 int set_thread_cpu_range(pthread_t thread, int cpu_idx_begin, int cpu_idx_end);
-int set_cur_thread_cpu_range(int cpu_idx_begin, int cpu_idx_end);
 int bind_cur_thread_to_cpu(int cpu_idx);
+int set_cur_thread_cpu_range(int cpu_idx_begin, int cpu_idx_end);
+int bind_thread_to_cpu(pthread_t thread, int cpu_idx);
+
+int create_thread_full(pthread_t *thread, void *fn, void *arg, int cpu_idx_begin, int cpu_idx_end, int policy, int sched_priority);
 
 uint64_t get_cpu_freq();
 #endif
