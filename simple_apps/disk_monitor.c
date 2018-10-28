@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-
+#include <inttypes.h>
 #include <syslog.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -133,12 +133,12 @@ void parse_args(int argc, char *argv[])
               
            case 'n': 
                g_fs_space_threshold = atoi(optarg);
-               DBG_PRINT("==%lld", g_fs_space_threshold);
+               DBG_PRINT("==%"PRId64, g_fs_space_threshold);
                break;
                
            case 't':
                g_space_test = atoi(optarg);
-               DBG_PRINT("==%lld", g_space_test);
+               DBG_PRINT("==%"PRId64, g_space_test);
                break;
 
 
@@ -175,7 +175,7 @@ int main(int argc, char * argv[])
 
     if (g_space_test)
         g_fs_space_threshold = fs_free_space("./") - g_space_test;
-DBG_PRINT("==%lld", g_fs_space_threshold);
+DBG_PRINT("==%"PRId64, g_fs_space_threshold);
     while (!NeedExit)
     {
         nano_sleep(1, 0);

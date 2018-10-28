@@ -58,7 +58,7 @@ endif
 
 export COMMON_CFLAGS
 export COMMON_LDFLAGS:=-rdynamic
-export COMMON_C_LIBS:=-ldl -pthread -lrt -lutil
+export COMMON_C_LIBS:=-ldl -pthread -lrt -lutil -lcrypto
 
 export INC_ALL_PRJ_LIB_HDR_DIR:=$(addprefix -I$(lib_root)/, $(addsuffix /api, $(lib_list)))
 export LINK_ALL_PRJ_LIB:=-L$(lib_target_root) -Wl,--whole-archive $(addprefix -l, $(lib_list)) -Wl,--no-whole-archive
