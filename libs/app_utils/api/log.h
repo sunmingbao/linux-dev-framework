@@ -27,6 +27,7 @@ int write_log(const char *fmt, ...);
     do \
     { \
         printf("DBG:%s(%d)-%s:\n"fmt"\n", __FILE__,__LINE__,__FUNCTION__,##args); \
+	fflush(stdout); \
         write_log("%s(%d), %s:\n"fmt"\n", __FILE__, __LINE__, __FUNCTION__, ##args);\
     } while (0)
 
@@ -35,6 +36,7 @@ int write_log(const char *fmt, ...);
     do \
     { \
         printf("ERROR:%s(%d)-%s:\n"fmt"\n:%s\n", __FILE__,__LINE__,__FUNCTION__,##args, strerror(errno)); \
+	fflush(stdout); \
         write_log("ERROR:%s(%d), %s:\n"fmt": %s\n", __FILE__, __LINE__, __FUNCTION__, ##args, strerror(errno));\
     } while (0)
 
@@ -42,6 +44,7 @@ int write_log(const char *fmt, ...);
     do \
     { \
         printf("ErrQuit:%s(%d)-%s:\n"fmt"\n:%s\n", __FILE__,__LINE__,__FUNCTION__,##args, strerror(errno)); \
+	fflush(stdout); \
         write_log("ErrQuit: %s(%d), %s:\n"fmt": %s\n", __FILE__, __LINE__, __FUNCTION__, ##args, strerror(errno));\
         exit(1);\
     } while (0)

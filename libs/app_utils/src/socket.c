@@ -75,29 +75,31 @@ void resolve_sockaddr(struct sockaddr_in *sock_addr, char * ip, int len, uint16_
 
 int socket_init_2(int type, struct sockaddr_in *sock_addr)
 {
-    int ret, sockfd;
-    
-    sockfd = socket(AF_INET, type, 0);
+	int ret, sockfd;
 
-    if (sockfd<0)
-    {
-        ErrSysLog("create socket failed");
-        return -1;
-    }
+	sockfd = socket(AF_INET, type, 0);
+
+	if (sockfd<0)
+	{
+		ErrSysLog("create socket failed");
+		return -1;
+	}
+
+	SysLog("create socket succeed, fd=%d", sockfd);
 
 	if (!sock_addr)
 		goto EXIT;
-    
-    set_useful_sock_opt(sockfd);
-    
-    ret=bind(sockfd, (struct sockaddr *)sock_addr, sizeof(struct sockaddr_in));
-    if (ret<0)
-    {
-        ErrSysLog("bind socket to %s:%d failed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
-        return -1;
-    }
 
-    SysLog("bind socket to %s:%d succeed", get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
+	set_useful_sock_opt(sockfd);
+
+	ret=bind(sockfd, (struct sockaddr *)sock_addr, sizeof(struct sockaddr_in));
+	if (ret<0)
+	{
+		ErrSysLog("bind socket fd %d to %s:%d failed", sockfd, get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
+		return -1;
+	}
+
+	SysLog("bind socket fd %d to %s:%d succeed", sockfd, get_ipstr(sock_addr, NULL), (int)get_port(sock_addr, NULL));
 
 EXIT:
     return sockfd;

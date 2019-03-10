@@ -17,6 +17,7 @@
 #include "io_utils.h"
 #include "signal_utils.h"
 #include "socket.h"
+#include "stat.h"
 #include "debug.h"
 
 
