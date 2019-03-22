@@ -74,13 +74,13 @@ int write_reliable(int fd, const void *buf, size_t count)
 
 TRY_AGAIN:
     ret = write(fd, buf, count);
-    if (ret<0 && EINTR==errno)
+    if (ret<0 && (EINTR==errno || EAGAIN==errno || EWOULDBLOCK==errno))
         goto TRY_AGAIN;
 
     return ret;
 }
 
-int write_certain_bytes(int fd, const void *buf, size_t count)
+int write_certain_bytes(int fd, const void *buf, size_t count, int *written)
 {
     int ret, left=count, finished=0;
 
@@ -88,13 +88,17 @@ int write_certain_bytes(int fd, const void *buf, size_t count)
     {
         ret = write_reliable(fd, buf+finished, left);
         if (ret<0)
-            return ret;
+            goto EXIT;
 
         finished+=ret;
         left-=ret;
     }
 
-    return 0;
+EXIT:
+    if (written)
+        (*written) = finished;
+
+    return (left==0)?0:ret;
 }
 
 int read_reliable(int fd, void *buf, size_t count)
@@ -103,27 +107,31 @@ int read_reliable(int fd, void *buf, size_t count)
 
 TRY_AGAIN:
     ret = read(fd, buf, count);
-    if (ret<0 && EINTR==errno)
+    if (ret<0 && (EINTR==errno || EAGAIN==errno || EWOULDBLOCK==errno))
         goto TRY_AGAIN;
 
     return ret;
 }
 
-int read_certain_bytes(int fd, void *buf, size_t count)
+int read_certain_bytes(int fd, void *buf, size_t count, int *actual_got)
 {
     int ret, left=count, finished=0;
 
     while (left>0)
     {
         ret = read_reliable(fd, buf+finished, left);
-        if (ret<0)
-            return ret;
+        if (ret<=0)
+            goto EXIT;
 
         finished+=ret;
         left-=ret;
     }
 
-    return 0;
+EXIT:
+    if (actual_got)
+        (*actual_got) = finished;
+
+    return (left==0) ? 0 : (ret<0?ret:-1);
 }
 
 int printf_to_fd(int fd, const char *fmt, ...)
@@ -136,7 +144,7 @@ int printf_to_fd(int fd, const char *fmt, ...)
     len = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
 
-    return write_certain_bytes(fd, buf, len);
+    return write_certain_bytes(fd, buf, len, NULL);
 }
 
 int get_temp_file(char *path)

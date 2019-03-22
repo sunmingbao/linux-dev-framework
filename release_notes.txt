@@ -1,8 +1,8 @@
 
-	linux-dev-framework v2.0.16
+	linux-dev-framework v2.0.17
 
-发布日期：2017/07/16
+发布日期：2019/03/23
 
 更新内容：
 
-    完善部分例程。
+    make some improvements.

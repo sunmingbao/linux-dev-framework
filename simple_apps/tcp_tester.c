@@ -292,7 +292,8 @@ static void sig_handler(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
 		}
 		ret=write_certain_bytes(the_working_paras.sockfd
 			, the_working_paras.snd_buf
-			, the_working_paras.snd_data_len);
+			, the_working_paras.snd_data_len
+			, NULL);
 
 		if (0==ret)
 		{

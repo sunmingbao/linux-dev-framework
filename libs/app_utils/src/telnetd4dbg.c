@@ -74,7 +74,7 @@ void term_session()
 void snd_iac(int sockfd, char cmd, char opt)
 {
     char data[3] = {IAC, cmd, opt};
-    write_certain_bytes(sockfd, data, sizeof(data));
+    write_certain_bytes(sockfd, data, sizeof(data), NULL);
 }
 
 static int tty_cfg(int fd)
@@ -143,9 +143,9 @@ static void refresh_shell_buf_display()
 		printf_to_fd(fd_pty_slave, "\r%s", "password:");
 
     if (!is_password)
-        write_certain_bytes(fd_pty_slave, shell_buf, shell_buf_cur_len);
+        write_certain_bytes(fd_pty_slave, shell_buf, shell_buf_cur_len, NULL);
 	else
-		write_certain_bytes(fd_pty_slave, "********************************", shell_buf_cur_len);
+		write_certain_bytes(fd_pty_slave, "********************************", shell_buf_cur_len, NULL);
 }
 
 static void back_input(int nr_back_step)
@@ -218,7 +218,7 @@ READ_BYTE:
 
     if (c==0x1b)
     {
-        ret=read_certain_bytes(fd_pty_slave, two_byes, 2);
+        ret=read_certain_bytes(fd_pty_slave, two_byes, 2, NULL);
         if (ret<0) return -1;
         if (two_byes[0]==0x5b && two_byes[1]==0x41)
             history_cmd_roll_prev();
@@ -429,7 +429,7 @@ static void trans_data_sock2pty()
 
     remove_iacs((void *)buf, ret, &ret);
     if (ret>0)
-        write_certain_bytes(fd_pty_master, buf, ret);
+        write_certain_bytes(fd_pty_master, buf, ret, NULL);
     //for (i=0;i<ret;i++)
     //    DBG_PRINT("%02hhx-%c", buf[i], buf[i]);
 }

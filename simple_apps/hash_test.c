@@ -10,15 +10,16 @@
 
 #include <stdio.h>
 #include <errno.h>
-#if 1
+
+#ifdef _USE_OPENSSL
 #include <openssl/md5.h> /* link with -lcrypto not -lcrypt , see man 3 crypto and man 3 crypt */
-#define USE_OPENSSL_MD5
 #else
 #include "md5.h"
 #endif
+
 #include "debug.h"
 
-#ifdef USE_OPENSSL_MD5
+#ifdef _USE_OPENSSL
 void md5_test(const char *str)
 {
   MD5_CTX context;
@@ -34,15 +35,7 @@ void md5_test(const char *str)
 #else
 void md5_test(const char *str)
 {
-  MD5_CTX context;
-  unsigned char digest[16];
-  unsigned int len = strlen (str);
-
-  MD5Init (&context);
-  MD5Update (&context, str, len);
-  MD5Final (digest, &context);
-
-  print_mem(digest,16);
+    ;
 }
 #endif
 

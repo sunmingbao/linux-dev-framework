@@ -216,19 +216,19 @@ static void rxtx_loop()
 						,ret);
 
 				}
-			    send_ret=write_certain_bytes(the_working_paras.sockfd, the_working_paras.buf, ret);
+			    send_ret=write_certain_bytes(the_working_paras.sockfd, the_working_paras.buf, ret, NULL);
 				INC_STAT(the_stat_data.tx_pkts_total);
 				INC_STAT_VALUE(the_stat_data.tx_bytes_total, ret);
 
 				if (0==send_ret)
 				{
 				    INC_STAT(the_stat_data.tx_pkts_succ);
-			        INC_STAT_VALUE(the_stat_data.tx_bytes_succ, ret);
+			            INC_STAT_VALUE(the_stat_data.tx_bytes_succ, ret);
 				}
 				else
 				{
 				    INC_STAT(the_stat_data.tx_pkts_fail);
-			        INC_STAT_VALUE(the_stat_data.tx_bytes_fail, ret);
+			            INC_STAT_VALUE(the_stat_data.tx_bytes_fail, ret);
 
 					if (!the_working_paras.no_verbose)
 					    ERR_DBG_PRINT("tx failed");
