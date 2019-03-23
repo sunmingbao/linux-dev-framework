@@ -18,6 +18,7 @@
  * [root@localhost ~]# ./a.out
  */
 
+#if defined(__i386) || defined( __x86_64)
 #include <stdio.h>
 #include <string.h>
 
@@ -375,4 +376,9 @@ DBG_PRINT("hello");
 DBG_PRINT("good bye");
     return 0;
 }
-
+#else
+int main(int argc, char *argv[])
+{
+    return 0;
+}
+#endif

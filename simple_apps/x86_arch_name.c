@@ -2,6 +2,7 @@
  * scratch from source code of gcc-4.8.2
  */
 
+#if defined(__i386) || defined( __x86_64)
 
 #include <stdio.h>
 #include "cpuid.h"
@@ -446,4 +447,9 @@ int main(int argc, char *argv[])
     printf("%s\n", host_detect_local_cpu());
     return 0;
 }
-
+#else
+int main(int argc, char *argv[])
+{
+    return 0;
+}
+#endif

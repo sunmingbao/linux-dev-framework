@@ -59,6 +59,7 @@ void print_mem(void *start_addr, uint32_t length)
 
 }
 
+#if defined(__i386) || defined( __x86_64)
 int get_call_links(unsigned long *records, int nr, unsigned long *usr_provide_bp)
 {
     unsigned long *bp;
@@ -73,8 +74,6 @@ int get_call_links(unsigned long *records, int nr, unsigned long *usr_provide_bp
         asm ("movl %%ebp, %0":"=qm"(bp));
 #elif defined( __x86_64)
         asm ("movq %%rbp, %0":"=qm"(bp));
-#else
-#error unsupported arch
 #endif
     }
 
@@ -89,4 +88,4 @@ int get_call_links(unsigned long *records, int nr, unsigned long *usr_provide_bp
 
     return depth;
 }
-
+#endif

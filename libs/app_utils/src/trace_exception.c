@@ -20,6 +20,7 @@
 #include "misc_utils.h"
 #include "symbol_utils.h"
 
+#if defined(__i386) || defined( __x86_64)
 #if defined(__i386)
 #define    UL_FMT_STR    "0x%08lx"
 #define    REG_BP_NO     REG_EBP
@@ -78,10 +79,7 @@ static const char *reg_names[] =
   "OLDMASK",
   "CR2",
 };
-#else
-#error unsupported arch
 #endif
-
 
 static void print_gregs(ucontext_t *pt_ucontext)
 {
@@ -133,14 +131,34 @@ static void print_stack_contents(void *sp)
     print_mem(sp, 512);
 printf("\n\n\n");
 }
-static void  exceptionmy_handler(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
+
+static void print_detailed_sig_info(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
 {
-    char prog_path[1024] = {0};
     ucontext_t *pt_ucontext = p_ucontext;
-    const char *sig_name="unknown";
     unsigned long *reg_bp = (void *)(pt_ucontext->uc_mcontext.gregs[REG_BP_NO]);
     unsigned long  reg_pc = pt_ucontext->uc_mcontext.gregs[REG_PC_NO];
     void *reg_sp = (void *)(pt_ucontext->uc_mcontext.gregs[REG_SP_NO]);
+
+    printf("pc=" UL_FMT_STR " access invalid mem addr=" UL_FMT_STR "\n\n\n"
+           ,reg_pc
+           ,(unsigned long)(pt_siginfo->si_addr));
+    
+    print_gregs(pt_ucontext);
+    print_call_links(reg_bp, reg_pc);
+    print_stack_contents(reg_sp);
+
+}
+#else
+static void print_detailed_sig_info(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
+{
+
+}
+#endif
+
+static void  exceptionmy_handler(int sig_no, siginfo_t *pt_siginfo, void *p_ucontext)
+{
+    char prog_path[1024] = {0};
+    const char *sig_name="unknown";
 
     get_self_path(prog_path, sizeof(prog_path));
     switch (sig_no)
@@ -172,14 +190,7 @@ static void  exceptionmy_handler(int sig_no, siginfo_t *pt_siginfo, void *p_ucon
         , sig_name);
 
 
-    printf("pc=" UL_FMT_STR " access invalid mem addr=" UL_FMT_STR "\n\n\n"
-           ,reg_pc
-           ,(unsigned long)(pt_siginfo->si_addr));
-    
-    print_gregs(pt_ucontext);
-    print_call_links(reg_bp, reg_pc);
-    print_stack_contents(reg_sp);
-
+    print_detailed_sig_info(sig_no, pt_siginfo, p_ucontext);
     
     exit(1);
 
