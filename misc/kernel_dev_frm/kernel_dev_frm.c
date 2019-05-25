@@ -24,6 +24,10 @@
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/pagemap.h>
+#include <linux/kthread.h>
+#include <linux/delay.h>
+#include <linux/workqueue.h>
+#include <linux/interrupt.h>
 #include <asm/byteorder.h>
 #include <asm/io.h>
 
@@ -199,6 +203,94 @@ static struct miscdevice the_miscdev = {
 	.fops	= &the_fops,
 };
 
+
+static struct task_struct * the_thread;
+
+
+struct misc_things {
+	/* work queue */
+	char workq_name[32];
+	struct workqueue_struct *the_workq;
+	struct work_struct the_work_item;
+
+	/* tasklet */
+	struct tasklet_struct my_tasklet;
+
+};
+
+static struct misc_things  gt_the_misc_thing;
+static struct misc_things* pt_misc = &gt_the_misc_thing;
+
+void the_work_func(struct work_struct *work)
+{
+	DBG_PRINT("hehe workq");
+}
+
+static void init_work_q(void)
+{
+	pt_misc->the_workq  = alloc_workqueue(pt_misc->workq_name,
+					  WQ_NON_REENTRANT | WQ_MEM_RECLAIM, 0);
+}
+
+static void deinit_work_q(void)
+{
+	destroy_workqueue(pt_misc->the_workq);
+}
+
+static void tasklet_func(unsigned long data)
+{
+	DBG_PRINT("haha tasklet");
+}
+
+static void init_tasklet(void)
+{
+	tasklet_init(&pt_misc->my_tasklet,
+			 tasklet_func, NULL);
+}
+
+static void deinit_tasklet(void)
+{
+	tasklet_kill(&pt_misc->my_tasklet);
+}
+
+static int the_thread_func(void *data)
+{
+	int cnt = 0;
+
+DBG_PRINT("the_thread enter");
+
+	init_work_q();
+	init_tasklet();
+
+	while (!kthread_should_stop()) {
+		DBG_PRINT("cnt=%d", cnt);
+		cnt++;
+
+		INIT_WORK(&pt_misc->the_work_item, the_work_func);
+		queue_work_on(0, pt_misc->the_workq, &pt_misc->the_work_item);
+
+		tasklet_schedule(&pt_misc->my_tasklet);
+		msleep(1000);
+	}
+
+	deinit_tasklet();
+	deinit_work_q();
+
+DBG_PRINT("the_thread exit");
+	return 0;
+}
+
+
+static int start_the_thread(void)
+{
+	int cpu = 1;
+
+	the_thread = kthread_create(the_thread_func, NULL, "hehe_thread_%d", cpu);
+	kthread_bind(the_thread, cpu);
+	wake_up_process(the_thread);
+}
+
+
 static int __init the_init(void)
 {
 	int err = 0;
@@ -215,6 +307,8 @@ static int __init the_init(void)
 		goto out;
 	}
 
+	start_the_thread();
+
 out:
 	return err;
 
@@ -222,6 +316,8 @@ out:
 
 static void __exit the_exit(void)
 {
+	kthread_stop(the_thread);
+
 	misc_deregister(&the_miscdev);
 	deinit_mod_data();
 
