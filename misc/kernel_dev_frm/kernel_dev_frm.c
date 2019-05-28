@@ -216,12 +216,56 @@ struct misc_things {
 	/* tasklet */
 	struct tasklet_struct my_tasklet;
 
+	/* hrtimer */
+	struct hrtimer my_hrtimer;
+
+	/* lock test */
+	spinlock_t		lock;
+	volatile unsigned long           cnt;
 };
 
 static struct misc_things  gt_the_misc_thing;
 static struct misc_things* pt_misc = &gt_the_misc_thing;
+static DEFINE_PER_CPU(int, per_cpu_test);
 
-void the_work_func(struct work_struct *work)
+#define    MY_HRTIMER_INTERVAL_NS    200000ULL
+
+static enum hrtimer_restart my_hrtimer_func(struct hrtimer *hrt)
+{
+	struct misc_things *pt_misc_things = container_of(hrt,
+						      struct misc_things,
+						      my_hrtimer);
+	enum hrtimer_restart rv = HRTIMER_RESTART;
+	unsigned long flags;
+
+	spin_lock_irqsave(&pt_misc_things->lock, flags);
+
+	pt_misc_things->cnt++;
+	hrtimer_forward_now(&pt_misc->my_hrtimer, ns_to_ktime(MY_HRTIMER_INTERVAL_NS));
+
+	spin_unlock_irqrestore(&pt_misc_things->lock, flags);
+
+	return rv;
+}
+
+static void init_hrtimer(void)
+{
+	hrtimer_init(&pt_misc->my_hrtimer, CLOCK_MONOTONIC,
+			     HRTIMER_MODE_REL);
+	pt_misc->my_hrtimer.function = my_hrtimer_func;
+
+	hrtimer_start_range_ns(&pt_misc->my_hrtimer,
+					ns_to_ktime(MY_HRTIMER_INTERVAL_NS),
+					MY_HRTIMER_INTERVAL_NS / 5,
+					HRTIMER_MODE_REL);
+}
+
+static void deinit_hrtimer(void)
+{
+	hrtimer_cancel(&pt_misc->my_hrtimer);
+}
+
+static void the_work_func(struct work_struct *work)
 {
 	DBG_PRINT("hehe workq");
 }
@@ -261,18 +305,23 @@ DBG_PRINT("the_thread enter");
 
 	init_work_q();
 	init_tasklet();
+	init_hrtimer();
 
 	while (!kthread_should_stop()) {
-		DBG_PRINT("cnt=%d", cnt);
 		cnt++;
+		DBG_PRINT("cnt=%d", cnt);
 
 		INIT_WORK(&pt_misc->the_work_item, the_work_func);
 		queue_work_on(0, pt_misc->the_workq, &pt_misc->the_work_item);
 
 		tasklet_schedule(&pt_misc->my_tasklet);
+
+		DBG_PRINT("pt_misc->cnt:%lu", pt_misc->cnt);
+		
 		msleep(1000);
 	}
 
+	deinit_hrtimer();
 	deinit_tasklet();
 	deinit_work_q();
 

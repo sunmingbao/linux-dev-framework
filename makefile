@@ -75,7 +75,7 @@ export LINK_ALL_PRJ_LIB:=-L$(lib_target_root) -Wl,--whole-archive $(addprefix -l
 export CFLAGS:=$(COMMON_CFLAGS)
 export INC_DIRS := -I. 
 export LDFLAGS:=$(COMMON_LDFLAGS)
-export LIBS:=$(COMMON_C_LIBS) $(LINK_ALL_PRJ_LIB)
+export LIBS:=$(LINK_ALL_PRJ_LIB) $(COMMON_C_LIBS)
 
 #finally targets list
 .PHONY:default  clean
