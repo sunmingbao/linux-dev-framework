@@ -51,7 +51,7 @@ export app_list:=$(shell ls $(app_root))
 #generate compile/link flags, -Ixxxs, -lxxxs
 #submakefile can change CFLAGS/INC_DIRS/LDFLAGS/LIBS according to lib/app name
 COMMON_CFLAGS:=-Wall -g -fno-strict-overflow -fno-strict-aliasing -fno-omit-frame-pointer -pthread
-COMMON_C_LIBS:=-ldl -pthread -lrt -lutil
+COMMON_C_LIBS:=-ldl -pthread -lrt -lutil -lm -lasound
 
 ifeq ($(COMPILE_TYPE),debug)
     COMMON_CFLAGS+=-D_DEBUG
