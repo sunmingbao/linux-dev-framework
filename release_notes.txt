@@ -1,8 +1,8 @@
 
 	linux-dev-framework v2.0.18
 
-·¢²¼ÈÕÆÚ£º2019/03/23
+å‘å¸ƒæ—¥æœŸï¼š2019/03/23
 
-¸üĞÂÄÚÈİ£º
+æ›´æ–°å†…å®¹ï¼š
 
     improvements build across different architectures.
