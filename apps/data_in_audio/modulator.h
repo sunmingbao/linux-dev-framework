@@ -14,10 +14,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define FREQ_MARK  2200
+#define FREQ_MARK  2100
 #define FREQ_SPACE 1200
-#define FREQ_PREAMBLE 1000
-#define BAUD_RATE 300
+#define FREQ_PREAMBLE FREQ_MARK
+#define BAUD_RATE 100
 
 void generate_tone(int16_t *buffer, int freq, size_t frames, double *phase);
 void modulate_byte(uint8_t byte, int16_t *buffer, double *phase);

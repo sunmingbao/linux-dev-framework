@@ -39,6 +39,9 @@ void modulate_byte(uint8_t byte, int16_t *buffer, double *phase) {
         buffer += samples_per_bit;
     }
 
-    // Stop bit (Mark)
-    generate_tone(buffer, FREQ_MARK, samples_per_bit, phase);
+    // 10 stop bits (Mark)
+    for (int i = 0; i < 10; i++) {
+        generate_tone(buffer, FREQ_MARK, samples_per_bit, phase);
+        buffer += samples_per_bit;
+    }
 }

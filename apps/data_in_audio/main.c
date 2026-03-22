@@ -37,10 +37,10 @@ void server_mode(const char *filename) {
         return;
     }
 
-    SysLog("Starting preamble (30s)...");
+    SysLog("Starting preamble (5s)...");
     double phase = 0.0;
     int16_t *preamble_buffer = malloc(SAMPLE_RATE * sizeof(int16_t));
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 5; i++) {
         generate_tone(preamble_buffer, FREQ_PREAMBLE, SAMPLE_RATE, &phase);
         audio_play(preamble_buffer, SAMPLE_RATE);
     }
@@ -50,17 +50,22 @@ void server_mode(const char *filename) {
     long file_size = ftell(f);
     fseek(f, 0, SEEK_SET);
     SysLog("Transmitting file data (%ld bytes)...", file_size);
-    size_t samples_per_byte = (SAMPLE_RATE / BAUD_RATE) * 10; // 1 start, 8 data, 1 stop
+    size_t samples_per_byte = (SAMPLE_RATE / BAUD_RATE) * 19; // 1 start, 8 data, 10 stop
     int16_t *data_buffer = malloc(samples_per_byte * sizeof(int16_t));
     
     // Send sync word
     modulate_byte((SYNC_WORD >> 8) & 0xFF, data_buffer, &phase);
-    if (audio_play(data_buffer, samples_per_byte) < 0) {
-        ErrSysLog("Failed to play sync word high");
-    }
+    audio_play(data_buffer, samples_per_byte);
     modulate_byte(SYNC_WORD & 0xFF, data_buffer, &phase);
-    if (audio_play(data_buffer, samples_per_byte) < 0) {
-        ErrSysLog("Failed to play sync word low");
+    audio_play(data_buffer, samples_per_byte);
+
+    // Send file size (4 bytes, Big Endian)
+    uint32_t fsize = (uint32_t)file_size;
+    for (int i = 0; i < 4; i++) {
+        modulate_byte((fsize >> (24 - 8 * i)) & 0xFF, data_buffer, &phase);
+        if (audio_play(data_buffer, samples_per_byte) < 0) {
+            ErrSysLog("Failed to play size byte");
+        }
     }
 
     uint8_t byte;
@@ -72,13 +77,14 @@ void server_mode(const char *filename) {
             break;
         }
         sent++;
-        if (sent % 1000 == 0) SysLog("Sent %ld/%ld bytes...", sent, file_size);
+        if (sent % 100 == 0) SysLog("Sent %ld/%ld bytes...", sent, file_size);
     }
 
     free(data_buffer);
+    sleep(1); // Wait for audio to drain
     audio_close_playback();
     fclose(f);
-    SysLog("Transmission complete.");
+    SysLog("Transmission complete. Total %ld bytes.", sent);
 }
 
 void client_mode(const char *filename) {
@@ -112,11 +118,28 @@ void client_mode(const char *filename) {
         }
     }
 
-    SysLog("Sync Word detected. Receiving file data...");
+    SysLog("Sync Word detected. Receiving file size...");
+    uint32_t fsize = 0;
+    for (int i = 0; i < 4; i++) {
+        uint8_t size_byte;
+        if (demodulate_byte(&size_byte) < 0) {
+             ErrSysLog("Failed to receive file size");
+             audio_close_capture();
+             fclose(f);
+             return;
+        }
+        fsize = (fsize << 8) | size_byte;
+    }
+
+    SysLog("Receiving file data (%u bytes)...", fsize);
     uint8_t byte;
-    while (demodulate_byte(&byte) == 0) {
+    for (uint32_t i = 0; i < fsize; i++) {
+        if (demodulate_byte(&byte) < 0) {
+            ErrSysLog("Failed to receive byte at %u", i);
+            break;
+        }
         fwrite(&byte, 1, 1, f);
-        fflush(f);
+        if (i % 100 == 0) fflush(f);
     }
 
     audio_close_capture();
