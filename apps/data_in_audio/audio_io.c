@@ -45,23 +45,35 @@ int audio_init_capture(const char *device) {
 }
 
 int audio_play(int16_t *buffer, size_t frames) {
-    snd_pcm_sframes_t err;
-    err = snd_pcm_writei(playback_handle, buffer, frames);
-    if (err == -EPIPE) {
-        snd_pcm_prepare(playback_handle);
-        err = snd_pcm_writei(playback_handle, buffer, frames);
+    snd_pcm_sframes_t total = 0;
+    while (total < frames) {
+        snd_pcm_sframes_t err = snd_pcm_writei(playback_handle, buffer + total, frames - total);
+        if (err < 0) {
+            if (err == -EPIPE) {
+                snd_pcm_prepare(playback_handle);
+                continue;
+            }
+            return (int)err;
+        }
+        total += err;
     }
-    return (int)err;
+    return (int)total;
 }
 
 int audio_record(int16_t *buffer, size_t frames) {
-    snd_pcm_sframes_t err;
-    err = snd_pcm_readi(capture_handle, buffer, frames);
-    if (err == -EPIPE) {
-        snd_pcm_prepare(capture_handle);
-        err = snd_pcm_readi(capture_handle, buffer, frames);
+    snd_pcm_sframes_t total = 0;
+    while (total < frames) {
+        snd_pcm_sframes_t err = snd_pcm_readi(capture_handle, buffer + total, frames - total);
+        if (err < 0) {
+            if (err == -EPIPE) {
+                snd_pcm_prepare(capture_handle);
+                continue;
+            }
+            return (int)err;
+        }
+        total += err;
     }
-    return (int)err;
+    return (int)total;
 }
 
 void audio_close_playback(void) {

@@ -46,15 +46,26 @@ int wait_for_preamble(void) {
 
 int demodulate_byte(uint8_t *byte) {
     size_t samples_per_bit = SAMPLE_RATE / BAUD_RATE;
-    int16_t buffer[samples_per_bit];
+    // Use a larger buffer to accommodate skips
+    int16_t buffer[samples_per_bit * 2];
     
-    // 1. Wait for Start bit (Space / 1200 Hz)
+    // 1. Wait for Start bit (Space / 1200 Hz) leading edge
+    size_t check_size = samples_per_bit / 2;
+    if (check_size == 0) check_size = 1;
     while (1) {
-        if (audio_record(buffer, samples_per_bit / 4) < 0) return -1;
-        if (goertzel_magnitude(buffer, samples_per_bit / 4, FREQ_SPACE) > 1e10) break;
+        if (audio_record(buffer, check_size) < 0) return -1;
+        double mag_space = goertzel_magnitude(buffer, check_size, FREQ_SPACE);
+        double mag_mark = goertzel_magnitude(buffer, check_size, FREQ_MARK);
+        // Half-bit window (N=73) has good frequency resolution.
+        // SPACE must be dominant over MARK and above noise threshold.
+        if (mag_space > 2e8 && mag_space > mag_mark * 2) break;
     }
     
-    // 2. Sample bits in the middle of each period
+    // 2. Skip the rest of the start bit to reach the start of the first data bit.
+    // We already consumed 'check_size' samples.
+    audio_record(buffer, samples_per_bit - check_size);
+    
+    // 3. Sample 8 data bits using full-bit windows
     *byte = 0;
     for (int i = 0; i < 8; i++) {
         if (audio_record(buffer, samples_per_bit) < 0) return -1;
@@ -65,7 +76,6 @@ int demodulate_byte(uint8_t *byte) {
         }
     }
     
-    // 3. Skip Stop bit (Mark / 2200 Hz)
-    audio_record(buffer, samples_per_bit);
+    // 4. No need to skip the stop bit, the next call will wait for the next START bit.
     return 0;
 }
