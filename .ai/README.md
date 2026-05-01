@@ -2,4 +2,12 @@
 - skills/: Specialized skill definitions or documentation.
 - context/: Project-specific context files and background information.
 - prompts/: Reusable prompt templates or instructions.
-- archive/: Archived session logs or temporary research data.
+- features/: Documentation for planned, ongoing, and completed features.
+  - backlog/: Ideas and future features.
+  - ongoing/: Features currently under development.
+  - done/: Completed features.
+  - cancelled/: Discontinued features.
+  - **Convention**:
+    - Each feature MUST have its own directory named after the feature.
+    - The primary documentation for a feature MUST be named `design_spec.md` within that directory.
+    - Example: `features/done/data_in_audio/design_spec.md`

@@ -15,7 +15,12 @@ This project is a Linux development framework in C, providing common utilities a
     - `skills/`: Specialized skill definitions or documentation.
     - `context/`: Project-specific context files and background information.
     - `prompts/`: Reusable prompt templates or instructions.
-    - `archive/`: Archived session logs or temporary research data.
+    - `features/`: Documentation for planned, ongoing, and completed features.
+        - `backlog/`: Ideas and future features.
+        - `ongoing/`: Features currently under development.
+        - `done/`: Completed features.
+        - `cancelled/`: Discontinued features.
+        - **Convention**: Each feature has its own directory named after the feature, containing a `design_spec.md` file (e.g., `.ai/features/done/data_in_audio/design_spec.md`).
 
 ## Coding Standards
 - **Language**: C (GNU dialect).
